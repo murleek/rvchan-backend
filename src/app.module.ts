@@ -2,12 +2,12 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
-import { HttpExceptionFilter } from './http-exception.filter';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { DatabaseModule } from './db/database.module';
+import { NotFoundExceptionFilter } from './filters/404.filter';
 
 @Module({
   imports: [
@@ -32,6 +32,10 @@ import { DatabaseModule } from './db/database.module';
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: NotFoundExceptionFilter,
     },
   ],
 })

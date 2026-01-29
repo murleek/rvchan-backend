@@ -1,6 +1,6 @@
 {
   "name": "rvchan-backend",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "author": "",
   "private": true,
@@ -29,6 +29,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.2.5",
     "@nestjs/typeorm": "^11.0.0",
     "nestjs-zod": "^5.1.1",
     "pg": "^8.17.2",

@@ -8,6 +8,7 @@ import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { DatabaseModule } from './db/database.module';
 import { NotFoundExceptionFilter } from './filters/404.filter';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { NotFoundExceptionFilter } from './filters/404.filter';
 
     UsersModule,
     DatabaseModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,13 +1,33 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert } from 'typeorm';
+
+import { UserState } from '../types/user.types';
 
 @Entity()
 export class UserEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column()
+  @Column({ unique: true })
   email: string;
 
   @Column()
+  firstName: string;
+
+  @Column({ nullable: true })
+  lastName: string;
+
+  @Column({ nullable: true })
+  description: string;
+
+  @Column()
   password: string;
+
+  @Column({ unique: true, nullable: true })
+  username: string;
+
+  @Column({ default: true })
+  isPrivate: boolean;
+
+  @Column({ default: UserState.INIT })
+  state: UserState;
 }

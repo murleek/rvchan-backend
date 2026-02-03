@@ -111,7 +111,6 @@ export class AuthService {
     session.userAgent = ua;
 
     await this.refreshRepo.save(session);
-    console.log('Revoked session:', session.id);
 
     return this.issueTokens(session.user, ip, ua, session);
   }

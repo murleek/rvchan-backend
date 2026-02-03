@@ -1,64 +1,70 @@
+import { ExecutionContext } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
+import { UserEntity } from './entities/user.entity';
 
-describe('UsersController (Zod)', () => {
+import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+
+describe('UsersController', () => {
   let controller: UsersController;
-  let service: UsersService;
+  let usersService: jest.Mocked<UsersService>;
 
   // Mock UsersService
   const mockUsersService = {
-    create: jest.fn((email: string, password: string) => ({
-      id: 1,
-      email,
-      password,
-    })),
     findAll: jest.fn(() => [
-      { id: 1, email: 'test@mail.com', password: '123456' },
+      { id: 1, email: 'user@example.com', password: 'password' },
     ]),
+    getMe: jest.fn((id: number) => ({
+      id,
+      email: undefined,
+      password: undefined,
+    })),
   };
+
+  const mockUser: UserEntity = {
+    id: 1,
+    email: 'user@example.com',
+    password: 'password',
+  } as UserEntity;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
       providers: [{ provide: UsersService, useValue: mockUsersService }],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: (context: ExecutionContext) => {
+          const req = context.switchToHttp().getRequest();
+          req.user = mockUser;
+          return true;
+        },
+      })
+      .compile();
 
     controller = module.get<UsersController>(UsersController);
-    service = module.get<UsersService>(UsersService);
+    usersService = module.get(UsersService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should create a user', () => {
-    const dto = {
-      email: 'test@mail.com',
-      password: '123456',
-    };
+  describe('getMe', () => {
+    it('should return a current user', async () => {
+      const publicUser = { id: 1, email: 'user@example.com' };
+      usersService.getMe.mockResolvedValue(publicUser as any);
 
-    const result = controller.create(dto);
+      const response = await controller.getMe(mockUser);
 
-    expect(result).toEqual({
-      id: 1,
-      email: dto.email,
-      password: dto.password,
+      expect(response).toEqual(publicUser);
+      expect(usersService.getMe).toHaveBeenCalledWith(1);
     });
-
-    expect(mockUsersService.create).toHaveBeenCalledWith(
-      dto.email,
-      dto.password,
-    );
-  });
-
-  it('should return all users', () => {
-    const result = controller.findAll();
-
-    expect(result).toEqual([
-      { id: 1, email: 'test@mail.com', password: '123456' },
-    ]);
-
-    expect(mockUsersService.findAll).toHaveBeenCalled();
   });
 });

@@ -25,7 +25,6 @@ export class AuthController {
         'unknown') as string,
       req.headers['user-agent'],
     );
-    console.log(auth);
     return auth;
   }
 

@@ -8,11 +8,6 @@ import { UserEntity } from './entities/user.entity';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
-  }
-
   @UseGuards(JwtAuthGuard)
   @Get('me')
   async getMe(@CurrentUser() user: UserEntity) {

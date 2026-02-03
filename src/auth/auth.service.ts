@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
@@ -16,6 +21,7 @@ export class AuthService {
     (process.env.JWT_REFRESH_EXPIRES_IN as StringValue) || '7d';
   private readonly accessTtl =
     (process.env.JWT_EXPIRES_IN as StringValue) || '15m';
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly usersService: UsersService,
@@ -138,19 +144,18 @@ export class AuthService {
     }));
   }
 
-  @Cron('0 4 * * 6') // every saturday at 4:00 AM
+  @Cron('0 5 * * 6') // every saturday at 5:00 AM
   async cleanupExpiredSessions() {
     const now = new Date();
-    console.log('Cleaning up expired refresh tokens...');
-    const sessions = await this.refreshRepo.find({
-      where: { expiresAt: LessThan(now) },
+    this.logger.debug('Cleaning up expired refresh tokens...');
+    const sessions = await this.refreshRepo.delete({
+      expiresAt: LessThan(now),
     });
-    console.log(sessions);
-    if (sessions.length > 0) {
-      await this.refreshRepo.delete(sessions.map((s) => s.id));
-      console.log(`Deleted ${sessions.length} expired sessions.`);
+
+    if (!sessions.affected) {
+      this.logger.debug('No expired sessions found.');
     } else {
-      console.log('No expired sessions found.');
+      this.logger.debug(`Deleted ${sessions.affected} expired sessions.`);
     }
   }
 }

@@ -3,11 +3,12 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from 'src/users/users.service';
 import { RefreshTokenEntity } from './entities/refresh-token.entity';
-import { Repository } from 'typeorm';
+import { LessThan, MoreThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { StringValue } from 'ms';
 import { UserEntity } from 'src/users/entities/user.entity';
 import ms from 'ms';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class AuthService {
@@ -64,14 +65,15 @@ export class AuthService {
       ? session
       : ({
           user,
-          expiresAt: new Date(ms(this.refreshTtl) + Date.now()),
         } as RefreshTokenEntity);
 
     newSession.ip = ip;
     newSession.userAgent = userAgent;
     newSession.tokenHash = tokenHash;
+    newSession.expiresAt = new Date(ms(this.refreshTtl) + Date.now());
 
     await this.refreshRepo.save(newSession);
+
     return {
       accessToken,
       refreshToken,
@@ -94,7 +96,13 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string, ip: string, ua: string = 'unknown') {
-    const payload = await this.jwtService.verifyAsync(refreshToken);
+    let payload: any;
+
+    try {
+      payload = await this.jwtService.verifyAsync(refreshToken);
+    } catch (e) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
 
     const sessions = await this.refreshRepo.find({
       where: { user: { id: payload.sub } },
@@ -106,11 +114,6 @@ export class AuthService {
     if (!session) {
       throw new UnauthorizedException('Invalid refresh token');
     }
-
-    session.ip = ip;
-    session.userAgent = ua;
-
-    await this.refreshRepo.save(session);
 
     return this.issueTokens(session.user, ip, ua, session);
   }
@@ -133,5 +136,21 @@ export class AuthService {
       updatedAt: session.updatedAt,
       expiresAt: session.expiresAt,
     }));
+  }
+
+  @Cron('0 4 * * 6') // every saturday at 4:00 AM
+  async cleanupExpiredSessions() {
+    const now = new Date();
+    console.log('Cleaning up expired refresh tokens...');
+    const sessions = await this.refreshRepo.find({
+      where: { expiresAt: LessThan(now) },
+    });
+    console.log(sessions);
+    if (sessions.length > 0) {
+      await this.refreshRepo.delete(sessions.map((s) => s.id));
+      console.log(`Deleted ${sessions.length} expired sessions.`);
+    } else {
+      console.log('No expired sessions found.');
+    }
   }
 }

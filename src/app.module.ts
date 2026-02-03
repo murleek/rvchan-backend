@@ -9,12 +9,14 @@ import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { DatabaseModule } from './db/database.module';
 import { NotFoundExceptionFilter } from './filters/404.filter';
 import { AuthModule } from './auth/auth.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
 
     UsersModule,
     DatabaseModule,

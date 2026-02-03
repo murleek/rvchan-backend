@@ -16,7 +16,7 @@ export const dataSourceOptions: DataSourceOptions = {
   migrationsTableName: 'migrations',
   migrationsRun: false,
   synchronize: false,
-  logging: process.env.ENV !== 'production',
+  // logging: process.env.ENV !== 'production',
 };
 
 const AppDataSource = new DataSource(dataSourceOptions);

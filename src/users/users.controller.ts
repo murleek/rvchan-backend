@@ -3,7 +3,6 @@ import { UsersService } from './users.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { UserEntity } from './entities/user.entity';
-import { UserMapper } from './mappers/public-user.mapper';
 
 @Controller('users')
 export class UsersController {

@@ -9,7 +9,7 @@ export const UserSchema = z.object({
   username: z.string().optional().nullable(),
   isPrivate: z.boolean(),
   state: z.enum(UserState),
-  firstName: z.string().nullable(),
+  firstName: z.string().optional().nullable(),
   lastName: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
 });

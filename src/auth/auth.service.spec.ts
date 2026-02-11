@@ -13,14 +13,16 @@ jest.mock('bcrypt', () => ({
 }));
 
 import * as bcrypt from 'bcrypt';
+import { UserService } from 'src/user/user.service';
 
 describe('AuthService', () => {
   let service: AuthService;
   let repo: jest.Mocked<Repository<RefreshTokenEntity>>;
 
-  const mockUsersService = {
+  const mockUserService = {
     validate: jest.fn(),
     create: jest.fn(),
+    getUser: jest.fn(),
   };
 
   const mockJwtService = {
@@ -30,7 +32,7 @@ describe('AuthService', () => {
 
   const mockRepo = {
     save: jest.fn(),
-    find: jest.fn(),
+    findOne: jest.fn(),
     delete: jest.fn(),
   };
 
@@ -40,10 +42,14 @@ describe('AuthService', () => {
   } as any;
 
   beforeEach(async () => {
+    jest
+      .spyOn(global.crypto, 'randomUUID')
+      .mockReturnValue('00000000-0000-0000-0000-000000000000');
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: UsersService, useValue: mockUsersService },
+        { provide: UserService, useValue: mockUserService },
         { provide: JwtService, useValue: mockJwtService },
         {
           provide: getRepositoryToken(RefreshTokenEntity),
@@ -59,19 +65,25 @@ describe('AuthService', () => {
   afterEach(() => jest.clearAllMocks());
 
   it('register', async () => {
-    mockUsersService.create.mockResolvedValue({ id: 1 });
+    mockUserService.create.mockResolvedValue({ id: 1 });
 
     const res = await service.register('user@example.com', 'password');
 
+    expect(mockUserService.create).toHaveBeenCalledWith(
+      'user@example.com',
+      'password',
+    );
     expect(res.id).toBe(1);
   });
 
-  it('login', async () => {
-    mockUsersService.validate.mockResolvedValue(mockUser);
+  it('login success', async () => {
+    mockUserService.validate.mockResolvedValue(mockUser);
+
     mockJwtService.signAsync
-      .mockResolvedValueOnce('access')
-      .mockResolvedValueOnce('refresh');
-    (bcrypt.hash as jest.Mock).mockResolvedValue('hash');
+      .mockResolvedValueOnce('access-token')
+      .mockResolvedValueOnce('refresh-token');
+
+    (bcrypt.hash as jest.Mock).mockResolvedValue('refresh-hash');
 
     const res = await service.login(
       'user@example.com',
@@ -80,61 +92,90 @@ describe('AuthService', () => {
       'User-Agent',
     );
 
-    expect(res.accessToken).toBe('access');
+    expect(res.accessToken).toBe('access-token');
+    expect(res.refreshToken).toBe('refresh-token');
+
     expect(repo.save).toHaveBeenCalled();
   });
 
-  it('refresh success', async () => {
-    mockJwtService.verifyAsync.mockResolvedValue({ sub: 1 });
-    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-    (bcrypt.hash as jest.Mock).mockResolvedValue('refresh-hash');
+  describe('refresh tokens', () => {
+    it('refresh success', async () => {
+      mockJwtService.verifyAsync.mockResolvedValue({
+        sub: 1,
+        deviceId: '00000000-0000-0000-0000-000000000000',
+      });
 
-    repo.find.mockResolvedValue([
-      {
+      repo.findOne.mockResolvedValue({
         id: 1,
+        deviceId: '00000000-0000-0000-0000-000000000000',
         tokenHash: 'refresh-hash',
         user: mockUser,
-      } as any,
-    ]);
+      } as any);
 
-    mockJwtService.signAsync
-      .mockResolvedValueOnce('access')
-      .mockResolvedValueOnce('refresh');
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('refresh-new-hash');
 
-    const res = await service.refresh('refresh-old', '127.0.0.1', 'User-Agent');
+      mockJwtService.signAsync
+        .mockResolvedValueOnce('access-new')
+        .mockResolvedValueOnce('refresh-new');
 
-    expect(res.accessToken).toBe('access');
-  });
+      const res = await service.refresh(
+        'refresh-old',
+        '127.0.0.1',
+        'User-Agent',
+      );
 
-  it('refresh invalid token', async () => {
-    mockJwtService.verifyAsync.mockResolvedValue({ sub: 1 });
-    (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+      expect(res.accessToken).toBe('access-new');
+      expect(res.refreshToken).toBe('refresh-new');
+      expect(repo.save).toHaveBeenCalled();
+    });
 
-    repo.find.mockResolvedValue([]);
+    it('refresh invalid token (jwt error)', async () => {
+      mockJwtService.verifyAsync.mockRejectedValue(new Error());
 
-    await expect(
-      service.refresh('refresh-bad', '127.0.0.1', 'User-Agent'),
-    ).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh('refresh-bad', '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('refresh invalid token (session not found)', async () => {
+      mockJwtService.verifyAsync.mockResolvedValue({
+        sub: 1,
+        deviceId: '00000000-0000-0000-0000-000000000000',
+      });
+
+      repo.findOne.mockResolvedValue(null);
+
+      await expect(service.refresh('refresh-old', '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('refresh invalid token (hash mismatch)', async () => {
+      mockJwtService.verifyAsync.mockResolvedValue({
+        sub: 1,
+        deviceId: '00000000-0000-0000-0000-000000000000',
+      });
+
+      repo.findOne.mockResolvedValue({
+        id: 1,
+        deviceId: '00000000-0000-0000-0000-000000000000',
+        tokenHash: 'refresh-hash',
+        user: mockUser,
+      } as any);
+
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await expect(service.refresh('refresh-bad', '127.0.0.1')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
   });
 
   it('logout', async () => {
-    const res = await service.logout(1);
+    const res = await service.logout('00000000-0000-0000-0000-000000000000');
 
     expect(repo.delete).toHaveBeenCalled();
     expect(res.statusCode).toBe(200);
-  });
-
-  it('getUserDevices', async () => {
-    repo.find.mockResolvedValue([
-      {
-        id: 1,
-        ip: '127.0.0.1',
-        userAgent: 'User-Agent',
-      },
-    ] as any);
-
-    const res = await service.getUserDevices(1);
-
-    expect(res[0].ip).toBe('127.0.0.1');
   });
 });

@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { UsersService } from './user.service';
+import { UserService } from './user.service';
 import { UserEntity } from './entities/user.entity';
 import { UserMapper } from './mappers/public-user.mapper';
 
@@ -15,7 +15,7 @@ jest.mock('bcrypt', () => ({
 import * as bcrypt from 'bcrypt';
 
 describe('UsersService', () => {
-  let service: UsersService;
+  let service: UserService;
   let repo: jest.Mocked<Repository<UserEntity>>;
 
   const mockRepo = {
@@ -33,7 +33,7 @@ describe('UsersService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        UsersService,
+        UserService,
         {
           provide: getRepositoryToken(UserEntity),
           useValue: mockRepo,
@@ -41,7 +41,7 @@ describe('UsersService', () => {
       ],
     }).compile();
 
-    service = module.get<UsersService>(UsersService);
+    service = module.get<UserService>(UserService);
     repo = module.get(getRepositoryToken(UserEntity));
   });
 
@@ -99,7 +99,7 @@ describe('UsersService', () => {
     });
   });
 
-  describe('getMe', () => {
+  describe('getUser', () => {
     it('should return public user', async () => {
       jest.spyOn(service, 'findById').mockResolvedValue(mockUser);
       jest.spyOn(UserMapper, 'toPublic').mockReturnValue({
@@ -107,7 +107,7 @@ describe('UsersService', () => {
         email: 'user@example.com',
       } as any);
 
-      const result = await service.getMe(1);
+      const result = await service.getUser(1);
 
       expect(result).toEqual({ id: 1, email: 'user@example.com' });
     });
@@ -115,7 +115,7 @@ describe('UsersService', () => {
     it('should throw NotFoundException if user not exists', async () => {
       jest.spyOn(service, 'findById').mockResolvedValue(null);
 
-      await expect(service.getMe(1)).rejects.toThrow(NotFoundException);
+      await expect(service.getUser(1)).rejects.toThrow(NotFoundException);
     });
   });
 

@@ -1,26 +1,26 @@
 import { ExecutionContext } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
-import { UsersController } from './user.controller';
-import { UsersService } from './user.service';
+import { UserController } from './user.controller';
+import { UserService } from './user.service';
 import { UserEntity } from './entities/user.entity';
 
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
+import { SessionsService } from 'src/sessions/sessions.service';
 
-describe('UsersController', () => {
-  let controller: UsersController;
-  let usersService: jest.Mocked<UsersService>;
+describe('UserController', () => {
+  let controller: UserController;
+  let sessionsService: jest.Mocked<SessionsService>;
 
-  // Mock UsersService
-  const mockUsersService = {
-    findAll: jest.fn(() => [
-      { id: 1, email: 'user@example.com', password: 'password' },
-    ]),
-    getMe: jest.fn((id: number) => ({
-      id,
-      email: undefined,
-      password: undefined,
-    })),
+  const mockRequest = {
+    user: {
+      id: 1,
+    },
+  };
+
+  const mockSessionsService = {
+    getUserDevices: jest.fn(),
+    logoutDevice: jest.fn(),
   };
 
   const mockUser: UserEntity = {
@@ -31,8 +31,8 @@ describe('UsersController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [UsersController],
-      providers: [{ provide: UsersService, useValue: mockUsersService }],
+      controllers: [UserController],
+      providers: [{ provide: SessionsService, useValue: mockSessionsService }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({
@@ -44,8 +44,39 @@ describe('UsersController', () => {
       })
       .compile();
 
-    controller = module.get<UsersController>(UsersController);
-    usersService = module.get(UsersService);
+    controller = module.get<UserController>(UserController);
+    sessionsService = module.get(SessionsService);
+  });
+
+  describe('GET /user/devices', () => {
+    it('should return user devices', async () => {
+      const devices = [];
+
+      mockSessionsService.getUserDevices.mockResolvedValue(devices);
+
+      const result = await controller.me(mockRequest as any);
+
+      expect(sessionsService.getUserDevices).toHaveBeenCalledWith(1);
+      expect(result).toEqual(devices);
+    });
+  });
+
+  describe('DELETE /user/devices', () => {
+    it('should revoke device', async () => {
+      const dto = { deviceId: '00000000-0000-0000-0000-000000000000' };
+
+      mockSessionsService.logoutDevice.mockResolvedValue({
+        success: true,
+      });
+
+      const result = await controller.revokeDevice(mockRequest as any, dto);
+
+      expect(sessionsService.logoutDevice).toHaveBeenCalledWith(
+        1,
+        '00000000-0000-0000-0000-000000000000',
+      );
+      expect(result).toEqual({ success: true });
+    });
   });
 
   afterEach(() => {
@@ -54,17 +85,5 @@ describe('UsersController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
-  });
-
-  describe('getMe', () => {
-    it('should return a current user', async () => {
-      const publicUser = { id: 1, email: 'user@example.com' };
-      usersService.getMe.mockResolvedValue(publicUser as any);
-
-      const response = await controller.getMe(mockUser);
-
-      expect(response).toEqual(publicUser);
-      expect(usersService.getMe).toHaveBeenCalledWith(1);
-    });
   });
 });

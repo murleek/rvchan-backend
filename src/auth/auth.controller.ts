@@ -1,13 +1,19 @@
 import { Controller, Post, Body, Req, UseGuards, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto, RefreshAuthDto } from './dto/auth.dto';
-import { CreateUserDto } from 'src/users/dto/user.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { CreateUserDto } from 'src/user/dto/user.dto';
 import type { Request } from 'express';
+import { JwtAuthGuard } from './guards/jwt.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { UserEntity } from 'src/user/entities/user.entity';
+import { UserService } from 'src/user/user.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {}
 
   @Post('register')
   register(@Body() dto: CreateUserDto) {
@@ -39,15 +45,15 @@ export class AuthController {
     );
   }
 
-  @UseGuards(AuthGuard('jwt-access'))
-  @Get('devices')
-  me(@Req() req) {
-    return this.authService.getUserDevices(req.user.userId);
-  }
-
-  @UseGuards(AuthGuard('jwt-access'))
+  @UseGuards(JwtAuthGuard)
   @Post('logout')
   logout(@Req() req) {
-    return this.authService.logout(req.user.userId);
+    return this.authService.logout(req.user.deviceId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  async getMe(@CurrentUser() user: UserEntity) {
+    return this.userService.getUser(user.id);
   }
 }

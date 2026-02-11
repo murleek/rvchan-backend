@@ -11,7 +11,7 @@ import { UserEntity } from './entities/user.entity';
 import { UserMapper } from './mappers/public-user.mapper';
 
 @Injectable()
-export class UsersService {
+export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly usersRepo: Repository<UserEntity>,
@@ -44,7 +44,7 @@ export class UsersService {
     return UserMapper.toPublic(user);
   }
 
-  async getMe(id: number) {
+  async getUser(id: number) {
     const userFromDb = await this.findById(id);
 
     if (!userFromDb) {

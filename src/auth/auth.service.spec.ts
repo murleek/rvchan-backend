@@ -5,9 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 
 import { AuthService } from './auth.service';
-import { RefreshTokenEntity } from './entities/refresh-token.entity';
-
-import { UsersService } from 'src/users/users.service';
+import { RefreshTokenEntity } from '../sessions/entities/refresh-token.entity';
 
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),

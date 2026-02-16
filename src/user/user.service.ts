@@ -69,9 +69,12 @@ export class UserService {
     return this.usersRepo.findOne({ where: { id } });
   }
 
-  async isUsernameTaken(username: string) {
-    const user = await this.usersRepo.findOne({ where: { username } });
-    return !!user;
+  async isUsernameTaken(username: string, user: UserEntity) {
+    const findedUser = await this.usersRepo.findOne({ where: { username } });
+    if (username === `id${user.id}`) {
+      return false;
+    }
+    return !!findedUser && findedUser.id !== user.id;
   }
 
   async initUser(id: number, dto: InitUserRequest) {

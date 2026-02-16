@@ -2,12 +2,11 @@ import { Controller, Post, Body, Req, UseGuards, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto, RefreshAuthDto } from './dto/auth.dto';
 import { CreateUserDto } from 'src/user/dto/user.dto';
-import type { Request } from 'express';
 import { JwtAuthGuard } from './guards/jwt.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { UserEntity } from 'src/user/entities/user.entity';
 import { UserService } from 'src/user/user.service';
-import { Authorize, States } from 'src/user/decorators/authorization.decorator';
+import { States } from 'src/user/decorators/authorization.decorator';
+import { type FastifyRequest } from 'fastify';
 
 @Controller('auth')
 export class AuthController {
@@ -25,7 +24,7 @@ export class AuthController {
 
   @Post('login')
   @States()
-  async login(@Req() req: Request, @Body() dto: AuthDto) {
+  async login(@Req() req: FastifyRequest, @Body() dto: AuthDto) {
     const auth = await this.authService.login(
       dto.email,
       dto.password,
@@ -39,7 +38,7 @@ export class AuthController {
 
   @Post('refresh')
   @States()
-  refresh(@Req() req: Request, @Body() dto: RefreshAuthDto) {
+  refresh(@Req() req: FastifyRequest, @Body() dto: RefreshAuthDto) {
     return this.authService.refresh(
       dto.refreshToken,
       ((req.headers['x-forwarded-for'] as string) ||
@@ -52,8 +51,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @States()
-  logout(@Req() req) {
-    return this.authService.logout(req.user.deviceId);
+  logout(@CurrentUser('deviceId') deviceId) {
+    return this.authService.logout(deviceId);
   }
 
   @UseGuards(JwtAuthGuard)

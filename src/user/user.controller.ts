@@ -20,6 +20,7 @@ import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { States } from './decorators/authorization.decorator';
 
 import { UserState } from './types/user.types';
+import { UserEntity } from './entities/user.entity';
 
 @Controller('user')
 export class UserController {
@@ -30,20 +31,26 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Get('devices')
-  me(@Req() req) {
-    return this.sessionService.getUserDevices(req.user.id);
+  me(@CurrentUser('id') userId: number) {
+    return this.sessionService.getUserDevices(userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('devices')
-  revokeDevice(@Req() req, @Body() dto: LogoutDeviceDto) {
-    return this.sessionService.logoutDevice(req.user.id, dto.deviceId);
+  revokeDevice(
+    @CurrentUser('id') userId: number,
+    @Body() dto: LogoutDeviceDto,
+  ) {
+    return this.sessionService.logoutDevice(userId, dto.deviceId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('check-username')
-  async checkUsername(@Body('username') username: string) {
-    const isTaken = await this.userService.isUsernameTaken(username);
+  async checkUsername(
+    @CurrentUser() user: UserEntity,
+    @Body('username') username: string,
+  ) {
+    const isTaken = await this.userService.isUsernameTaken(username, user);
     return { isTaken };
   }
 

@@ -7,12 +7,14 @@ import {
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import Redis from 'ioredis';
+
 import {
   AUTH_KEY,
   AuthorizeOptions,
   IncludeOrExclude,
 } from 'src/user/decorators/authorization.decorator';
 import { UserState } from 'src/user/types/user.types';
+import { FastifyRequest } from 'fastify';
 
 const RESTRICTED_STATES = [
   UserState.INIT,
@@ -29,10 +31,10 @@ export class JwtAuthGuard extends AuthGuard('jwt-access') {
   }
 
   async canActivate(ctx: ExecutionContext) {
-    const req = ctx.switchToHttp().getRequest();
+    const req = ctx.switchToHttp().getRequest<FastifyRequest>();
 
     const isAuth = await super.canActivate(ctx);
-    if (!isAuth) return false;
+    if (!isAuth || !req.user) return false;
 
     const { deviceId, id, state } = req.user;
 

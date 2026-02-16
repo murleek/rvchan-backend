@@ -22,7 +22,7 @@ services:
       dockerfile: Dockerfile
     container_name: nest_dev_api
     profiles: ['dev']
-    command: sh -c "npm install && npm run start:dev"
+    command: sh -c "yarn install --frozen-lockfile && yarn start:dev"
     volumes:
       - .:/app
       - /app/node_modules

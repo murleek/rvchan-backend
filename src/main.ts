@@ -1,8 +1,14 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import {
+  FastifyAdapter,
+  type NestFastifyApplication,
+} from '@nestjs/platform-fastify';
+import cors from '@fastify/cors';
 
-const envs = [
+import { AppModule } from './app.module';
+
+const REQUIRED_ENVS = [
   'DB_HOST',
   'DB_PORT',
   'DB_USERNAME',
@@ -10,26 +16,30 @@ const envs = [
   'DB_NAME',
   'JWT_SECRET',
   'JWT_EXPIRES_IN',
-];
+] as const;
+
+function validateEnv() {
+  const missing = REQUIRED_ENVS.filter((key) => !process.env[key]);
+
+  if (missing.length) {
+    throw new Error(`Missing required env variables: ${missing.join(', ')}`);
+  }
+}
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  validateEnv();
 
-  const notReadyEnvs: string[] = [];
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter(),
+  );
 
-  envs.forEach((env) => {
-    if (!process.env[env]) {
-      notReadyEnvs.push(env);
-    }
+  await app.register(cors, {
+    origin: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
   });
-
-  if (notReadyEnvs.length > 0) {
-    console.error(
-      'Missing required environment variables:',
-      notReadyEnvs.join(', '),
-    );
-    process.exit(1);
-  }
 
   const config = new DocumentBuilder()
     .setTitle('rvchan-backend API')
@@ -38,22 +48,16 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
 
-  const documentFactory = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, config);
 
-  for (const path of Object.values(documentFactory.paths)) {
-    for (const method of Object.values(path)) {
+  Object.values(document.paths).forEach((path) => {
+    Object.values(path).forEach((method: any) => {
       method.security = [{ bearer: [] }];
-    }
-  }
-
-  SwaggerModule.setup('swag', app, documentFactory, {
-    jsonDocumentUrl: 'swagger/json',
+    });
   });
 
-  app.enableCors({
-    origin: '*',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Authorization',
+  SwaggerModule.setup('swag', app, document, {
+    jsonDocumentUrl: 'swag/json',
   });
 
   await app.listen(process.env.PORT ?? 3000);

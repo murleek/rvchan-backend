@@ -12,10 +12,11 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { RefreshTokenEntity } from '../sessions/entities/refresh-token.entity';
 
 import type { StringValue } from 'ms';
+import { UserEntity } from 'src/user/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RefreshTokenEntity]),
+    TypeOrmModule.forFeature([RefreshTokenEntity, UserEntity]),
     UserModule,
     PassportModule,
     JwtModule.register({

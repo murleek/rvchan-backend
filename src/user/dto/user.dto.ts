@@ -14,6 +14,13 @@ export const UserSchema = z.object({
   description: z.string().optional().nullable(),
 });
 
+export const InitUserSchema = z.object({
+  username: z.string(),
+  firstName: z.string(),
+  lastName: z.string().optional(),
+  description: z.string().optional(),
+});
+
 export const PublicUserSchema = UserSchema.omit({
   password: true,
 });
@@ -31,9 +38,11 @@ export const UpdateUserSchema = UserSchema.partial().omit({
 });
 
 export type User = z.infer<typeof UserSchema>;
+export type InitUserRequest = z.infer<typeof InitUserSchema>;
 export type PublicUser = z.infer<typeof PublicUserSchema>;
 export type CreateUserRequest = z.infer<typeof CreateUserSchema>;
 
 export class UserDto extends createZodDto(UserSchema) {}
+export class InitUserDto extends createZodDto(InitUserSchema) {}
 export class PublicUserDto extends createZodDto(PublicUserSchema) {}
 export class CreateUserDto extends createZodDto(CreateUserSchema) {}

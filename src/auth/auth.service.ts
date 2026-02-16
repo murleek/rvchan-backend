@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/user/entities/user.entity';
 import ms from 'ms';
 import { SessionsService } from 'src/sessions/sessions.service';
+import { UserState } from 'src/user/types/user.types';
 
 @Injectable()
 export class AuthService {
@@ -53,6 +54,10 @@ export class AuthService {
     const tokenHash = await bcrypt.hash(refreshToken, 10);
 
     let newSession = session ?? ({} as RefreshTokenEntity);
+
+    if (user.state === UserState.INIT) {
+      await this.refreshRepo.delete({ user: { id: user.id } });
+    }
 
     newSession.user = user;
     newSession.deviceId = deviceId;

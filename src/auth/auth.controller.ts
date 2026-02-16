@@ -7,6 +7,7 @@ import { JwtAuthGuard } from './guards/jwt.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { UserEntity } from 'src/user/entities/user.entity';
 import { UserService } from 'src/user/user.service';
+import { Authorize, States } from 'src/user/decorators/authorization.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -16,12 +17,14 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @States()
   register(@Body() dto: CreateUserDto) {
     const user = this.authService.register(dto.email, dto.password);
     return user;
   }
 
   @Post('login')
+  @States()
   async login(@Req() req: Request, @Body() dto: AuthDto) {
     const auth = await this.authService.login(
       dto.email,
@@ -35,6 +38,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @States()
   refresh(@Req() req: Request, @Body() dto: RefreshAuthDto) {
     return this.authService.refresh(
       dto.refreshToken,
@@ -47,13 +51,15 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
+  @States()
   logout(@Req() req) {
     return this.authService.logout(req.user.deviceId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')
-  async getMe(@CurrentUser() user: UserEntity) {
+  @States()
+  async getMe(@CurrentUser() user: { id: number; deviceId: string }) {
     return this.userService.getUser(user.id);
   }
 }

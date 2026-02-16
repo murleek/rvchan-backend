@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 
 import { UserEntity } from './entities/user.entity';
 import { UserMapper } from './mappers/public-user.mapper';
+import { InitUserRequest } from './dto/user.dto';
 
 @Injectable()
 export class UserService {
@@ -66,5 +67,32 @@ export class UserService {
 
   async findById(id: number) {
     return this.usersRepo.findOne({ where: { id } });
+  }
+
+  async isUsernameTaken(username: string) {
+    const user = await this.usersRepo.findOne({ where: { username } });
+    return !!user;
+  }
+
+  async initUser(id: number, dto: InitUserRequest) {
+    const user = await this.usersRepo.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    user.username = dto.username;
+    user.firstName = dto.firstName;
+    if (dto.lastName) {
+      user.lastName = dto.lastName;
+    }
+    if (dto.description) {
+      user.description = dto.description;
+    }
+    if (user.state === 'INIT') {
+      user.state = 'ACTIVE';
+    }
+
+    await this.usersRepo.save(user);
   }
 }

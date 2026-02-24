@@ -6,6 +6,7 @@ import {
   Post,
   Req,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common';
 
 import { UserService } from './user.service';
@@ -14,7 +15,7 @@ import { SessionsService } from 'src/sessions/sessions.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 
 import { LogoutDeviceDto } from 'src/auth/dto/auth.dto';
-import { InitUserDto } from './dto/user.dto';
+import { InitUserDto, UsernameDto, UsernameSchema } from './dto/user.dto';
 
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { States } from './decorators/authorization.decorator';
@@ -45,13 +46,17 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('check-username')
+  @Post('check-username')
+  @States(UserState.INIT, UserState.ACTIVE)
   async checkUsername(
-    @CurrentUser() user: UserEntity,
     @Body('username') username: string,
+    @CurrentUser() user: UserEntity,
   ) {
-    const isTaken = await this.userService.isUsernameTaken(username, user);
-    return { isTaken };
+    const available = await this.userService.isUsernameAvailable(
+      username,
+      user,
+    );
+    return available;
   }
 
   @UseGuards(JwtAuthGuard)

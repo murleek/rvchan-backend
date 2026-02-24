@@ -1,6 +1,6 @@
 {
   "name": "rvchan-backend",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "",
   "author": "",
   "private": true,
@@ -20,11 +20,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d db/typeorm.config.ts",
     "typeorm:noconfig": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
-    "migration:create": "npm run typeorm:noconfig -- migration:create",
-    "migration:generate": "npm run typeorm -- migration:generate",
-    "migration:run": "npm run typeorm -- migration:run",
-    "migration:revert": "npm run typeorm -- migration:revert",
-    "migration:show": "npm run typeorm -- migration:show"
+    "migration:create": "yarn typeorm:noconfig -- migration:create",
+    "migration:generate": "yarn typeorm -- migration:generate",
+    "migration:run": "yarn typeorm -- migration:run",
+    "migration:revert": "yarn typeorm -- migration:revert",
+    "migration:show": "yarn typeorm -- migration:show"
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",

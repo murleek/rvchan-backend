@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { cleanupOpenApiDoc } from 'nestjs-zod';
 import {
   FastifyAdapter,
   type NestFastifyApplication,
@@ -27,6 +28,7 @@ function validateEnv() {
 }
 
 async function bootstrap() {
+  const port: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
   validateEnv();
 
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -35,10 +37,10 @@ async function bootstrap() {
   );
 
   await app.register(cors, {
-    origin: true,
+    origin: '*',
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
+    // credentials: true,
   });
 
   const config = new DocumentBuilder()
@@ -56,10 +58,10 @@ async function bootstrap() {
     });
   });
 
-  SwaggerModule.setup('swag', app, document, {
+  SwaggerModule.setup('swag', app, cleanupOpenApiDoc(document), {
     jsonDocumentUrl: 'swag/json',
   });
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(port, '0.0.0.0');
 }
 bootstrap();

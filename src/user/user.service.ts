@@ -1,10 +1,11 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { UserEntity } from './entities/user.entity';
@@ -69,12 +70,57 @@ export class UserService {
     return this.usersRepo.findOne({ where: { id } });
   }
 
-  async isUsernameTaken(username: string, user: UserEntity) {
-    const findedUser = await this.usersRepo.findOne({ where: { username } });
-    if (username === `id${user.id}`) {
-      return false;
+  validateUsername(username) {
+    if (username.startsWith('id')) {
+      const reservedId = username.slice(2);
+      if (/^\d+$/.test(reservedId) && Number(reservedId) > 0) {
+        return 'reservedId';
+      }
     }
-    return !!findedUser && findedUser.id !== user.id;
+    if (username.length < 5) {
+      return 'minLength';
+    }
+    if (username.length > 32) {
+      return 'maxLength';
+    }
+
+    if (/[^A-Za-z0-9_.]/.test(username)) {
+      return 'invalidCharacters';
+    }
+
+    if (!/^[A-Za-z]/.test(username)) {
+      return 'startWithLetter';
+    }
+
+    if (!/[A-Za-z0-9]$/.test(username)) {
+      return 'endWithLetterOrDigit';
+    }
+
+    if (/(\.|_){2}/.test(username)) {
+      return 'consecutiveDotsUnderscores';
+    }
+
+    return null;
+  }
+
+  async isUsernameAvailable(username: string, user: UserEntity) {
+    const validationResult = this.validateUsername(username);
+    const isReservedForUser =
+      validationResult === 'reservedId' &&
+      Number(username.slice(2)) === user.id;
+
+    if (validationResult && !isReservedForUser) {
+      return {
+        available: false,
+        message: validationResult,
+      };
+    }
+
+    const findedUser = await this.usersRepo.findOne({
+      where: { username: ILike(username) },
+    });
+
+    return { available: !findedUser || findedUser.id === user.id };
   }
 
   async initUser(id: number, dto: InitUserRequest) {

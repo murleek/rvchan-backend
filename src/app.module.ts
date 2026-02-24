@@ -1,18 +1,21 @@
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UserModule } from './user/user.module';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
+
 import { HttpExceptionFilter } from './filters/http-exception.filter';
-import { DatabaseModule } from './db/database.module';
 import { NotFoundExceptionFilter } from './filters/404.filter';
-import { AuthModule } from './auth/auth.module';
+
+import { AppService } from './app.service';
+import { AppController } from './app.controller';
+
+import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RedisModule } from './redis/redis.module';
-import { SessionsService } from './sessions/sessions.service';
+import { DatabaseModule } from './db/database.module';
 import { SessionsModule } from './sessions/sessions.module';
+import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -21,11 +24,11 @@ import { SessionsModule } from './sessions/sessions.module';
     }),
     ScheduleModule.forRoot(),
 
-    UserModule,
-    DatabaseModule,
-    AuthModule,
     RedisModule,
+    DatabaseModule,
     SessionsModule,
+    UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

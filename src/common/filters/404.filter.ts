@@ -4,7 +4,7 @@ import {
   ExceptionFilter,
   NotFoundException,
 } from '@nestjs/common';
-import { version } from '../../package.json';
+import { version } from '../../../package.json';
 
 @Catch(NotFoundException)
 export class NotFoundExceptionFilter implements ExceptionFilter {

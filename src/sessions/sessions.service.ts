@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import Redis from 'ioredis';
-import { RefreshTokenEntity } from 'src/sessions/entities/refresh-token.entity';
+import { SessionsEntity } from 'src/sessions/entities/sessions.entity';
 import { LessThan, Repository } from 'typeorm';
 import ms, { StringValue } from 'ms';
 import { Cron } from '@nestjs/schedule';
@@ -15,8 +15,8 @@ export class SessionsService {
   private readonly logger = new Logger(SessionsService.name);
 
   constructor(
-    @InjectRepository(RefreshTokenEntity)
-    private refreshRepo: Repository<RefreshTokenEntity>,
+    @InjectRepository(SessionsEntity)
+    private refreshRepo: Repository<SessionsEntity>,
     @Inject('REDIS') private readonly redis: Redis,
   ) {}
 
@@ -34,12 +34,22 @@ export class SessionsService {
   async getUserDevices(userId: number) {
     const sessions = await this.refreshRepo.find({
       where: { user: { id: userId } },
+      order: { updatedAt: 'DESC' },
     });
 
     return sessions.map((session) => ({
       id: session.deviceId,
-      ip: session.ip,
-      userAgent: session.userAgent,
+      ip: session.ip.split(',')[0].trim(),
+      userAgent: {
+        raw: session.userAgent,
+        browser: session.browser,
+        browserVersion: session.browserVersion,
+        deviceModel: session.deviceModel,
+        deviceType: session.deviceType,
+        deviceVendor: session.deviceVendor,
+        os: session.os,
+        osVersion: session.osVersion,
+      },
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
       expiresAt: session.expiresAt,

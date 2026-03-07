@@ -23,19 +23,25 @@ export class UserService {
     const user = await this.findByEmail(email);
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('invalid_credentials');
     }
 
     const isValid = await bcrypt.compare(password, user.password);
 
     if (!isValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('invalid_credentials');
     }
 
     return user;
   }
 
   async create(email: string, password: string) {
+    let existingUser = await this.findByEmail(email);
+
+    if (existingUser) {
+      throw new BadRequestException('user_exists');
+    }
+
     const hash = await bcrypt.hash(password, 10);
 
     let user = await this.usersRepo.save({
@@ -48,6 +54,34 @@ export class UserService {
 
   async getUser(id: number) {
     const userFromDb = await this.findById(id);
+
+    if (!userFromDb) {
+      throw new NotFoundException('User not found');
+    }
+
+    return UserMapper.toPublic(userFromDb);
+  }
+
+  async getUserByUsername(username: string) {
+    const validationResult = this.validateUsername(username);
+    if (validationResult && validationResult !== 'reservedId') {
+      throw new BadRequestException(validationResult);
+    }
+
+    if (validationResult === 'reservedId') {
+      const userId = Number(username.slice(2));
+      const userById = await this.getUser(userId);
+
+      if (!userById) {
+        throw new NotFoundException('User not found');
+      }
+
+      return userById;
+    }
+
+    const userFromDb = await this.usersRepo.findOne({
+      where: { username: ILike(username) },
+    });
 
     if (!userFromDb) {
       throw new NotFoundException('User not found');
@@ -124,24 +158,30 @@ export class UserService {
   }
 
   async initUser(id: number, dto: InitUserRequest) {
+    if (!dto.username) {
+      dto.username = `id${id}`;
+    }
+
+    const usernameCheck = await this.isUsernameAvailable(dto.username, {
+      id,
+    } as UserEntity);
+
+    if (!usernameCheck.available) {
+      throw new BadRequestException(usernameCheck);
+    }
+
     const user = await this.usersRepo.findOne({ where: { id } });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    user.username = dto.username;
-    user.firstName = dto.firstName;
-    if (dto.lastName) {
-      user.lastName = dto.lastName;
-    }
-    if (dto.description) {
-      user.description = dto.description;
-    }
-    if (user.state === 'INIT') {
-      user.state = 'ACTIVE';
+    const newUser = { ...user, ...dto, isPrivate: false } as UserEntity;
+
+    if (newUser.state === 'INIT') {
+      newUser.state = 'ACTIVE';
     }
 
-    await this.usersRepo.save(user);
+    await this.usersRepo.save(newUser);
   }
 }

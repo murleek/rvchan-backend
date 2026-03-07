@@ -1,19 +1,17 @@
-import { Controller, Post, Body, Req, UseGuards, Get } from '@nestjs/common';
+import { Controller, Post, Body, Req, UseGuards, Ip } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto, RefreshAuthDto } from './dto/auth.dto';
 import { CreateUserDto } from 'src/user/dto/user.dto';
 import { JwtAuthGuard } from './guards/jwt.guard';
-import { CurrentUser } from './decorators/current-user.decorator';
-import { UserService } from 'src/user/user.service';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { States } from 'src/user/decorators/authorization.decorator';
 import { type FastifyRequest } from 'fastify';
+import { UserAgent } from 'src/common/decorators/user-agent.decorator';
+import type { ParsedUserAgent } from 'src/common/interfaces/user-agent.interface';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly userService: UserService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   @States()
@@ -24,28 +22,28 @@ export class AuthController {
 
   @Post('login')
   @States()
-  async login(@Req() req: FastifyRequest, @Body() dto: AuthDto) {
+  async login(
+    @UserAgent() userAgent: ParsedUserAgent,
+    @Body() dto: AuthDto,
+    @Ip() ip: string,
+  ) {
     const auth = await this.authService.login(
       dto.email,
       dto.password,
-      ((req.headers['x-forwarded-for'] as string) ||
-        req.ip ||
-        'unknown') as string,
-      req.headers['user-agent'],
+      ip,
+      userAgent,
     );
     return auth;
   }
 
   @Post('refresh')
   @States()
-  refresh(@Req() req: FastifyRequest, @Body() dto: RefreshAuthDto) {
-    return this.authService.refresh(
-      dto.refreshToken,
-      ((req.headers['x-forwarded-for'] as string) ||
-        req.ip ||
-        'unknown') as string,
-      req.headers['user-agent'],
-    );
+  refresh(
+    @UserAgent() userAgent: ParsedUserAgent,
+    @Body() dto: RefreshAuthDto,
+    @Ip() ip: string,
+  ) {
+    return this.authService.refresh(dto.refreshToken, ip, userAgent);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -53,12 +51,5 @@ export class AuthController {
   @States()
   logout(@CurrentUser('deviceId') deviceId) {
     return this.authService.logout(deviceId);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Get('profile')
-  @States()
-  async getMe(@CurrentUser() user: { id: number; deviceId: string }) {
-    return this.userService.getUser(user.id);
   }
 }

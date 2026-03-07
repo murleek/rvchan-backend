@@ -5,7 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Repository } from 'typeorm';
 
 import { AuthService } from './auth.service';
-import { RefreshTokenEntity } from '../sessions/entities/refresh-token.entity';
+import { SessionsEntity } from '../sessions/entities/sessions.entity';
 
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
@@ -17,7 +17,7 @@ import { UserService } from 'src/user/user.service';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let repo: jest.Mocked<Repository<RefreshTokenEntity>>;
+  let repo: jest.Mocked<Repository<SessionsEntity>>;
 
   const mockUserService = {
     validate: jest.fn(),
@@ -52,14 +52,14 @@ describe('AuthService', () => {
         { provide: UserService, useValue: mockUserService },
         { provide: JwtService, useValue: mockJwtService },
         {
-          provide: getRepositoryToken(RefreshTokenEntity),
+          provide: getRepositoryToken(SessionsEntity),
           useValue: mockRepo,
         },
       ],
     }).compile();
 
     service = module.get(AuthService);
-    repo = module.get(getRepositoryToken(RefreshTokenEntity));
+    repo = module.get(getRepositoryToken(SessionsEntity));
   });
 
   afterEach(() => jest.clearAllMocks());

@@ -9,14 +9,14 @@ import { UserModule } from '../user/user.module';
 
 import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
-import { RefreshTokenEntity } from '../sessions/entities/refresh-token.entity';
+import { SessionsEntity } from '../sessions/entities/sessions.entity';
 
 import type { StringValue } from 'ms';
 import { UserEntity } from 'src/user/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RefreshTokenEntity, UserEntity]),
+    TypeOrmModule.forFeature([SessionsEntity, UserEntity]),
     UserModule,
     PassportModule,
     JwtModule.register({

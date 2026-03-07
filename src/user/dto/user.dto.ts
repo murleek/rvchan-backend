@@ -2,23 +2,25 @@ import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 import { UserState } from '../types/user.types';
 
+const UsernameObject = z.string().min(3).max(32);
+
 export const UserSchema = z.object({
   id: z.number(),
   email: z.email(),
-  password: z.string().min(6),
-  username: z.string().min(5).max(32).optional().nullable(),
+  password: z.string().min(6).max(32),
+  username: UsernameObject.optional().nullable(),
   isPrivate: z.boolean(),
   state: z.enum(UserState),
-  firstName: z.string().optional().nullable(),
-  lastName: z.string().optional().nullable(),
-  description: z.string().optional().nullable(),
+  firstName: z.string().max(32).optional().nullable(),
+  lastName: z.string().max(32).optional().nullable(),
+  description: z.string().max(256).optional().nullable(),
 });
 
 export const InitUserSchema = z.object({
-  username: z.string().min(5).max(32),
-  firstName: z.string(),
-  lastName: z.string().optional(),
-  description: z.string().optional(),
+  username: UsernameObject.optional(),
+  firstName: z.string().max(32),
+  lastName: z.string().max(32).optional(),
+  description: z.string().max(256).optional(),
 });
 
 export const PublicUserSchema = UserSchema.omit({
@@ -38,6 +40,9 @@ export const UpdateUserSchema = UserSchema.partial().omit({
 });
 
 export const UsernameSchema = InitUserSchema.pick({ username: true });
+export const GetUserSchema = z.object({
+  username: UsernameObject,
+});
 
 export type User = z.infer<typeof UserSchema>;
 export type InitUserRequest = z.infer<typeof InitUserSchema>;
@@ -53,3 +58,4 @@ export class CreateUserDto extends createZodDto(CreateUserSchema) {}
 export class UpdateUserDto extends createZodDto(UpdateUserSchema) {}
 
 export class UsernameDto extends createZodDto(UsernameSchema) {}
+export class GetUserDto extends createZodDto(GetUserSchema) {}

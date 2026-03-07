@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class RefreshTokenEntity {
+export class SessionsEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -24,6 +24,27 @@ export class RefreshTokenEntity {
 
   @Column({ default: 'unknown' })
   userAgent: string;
+
+  @Column({ nullable: true })
+  browser: string;
+
+  @Column({ nullable: true })
+  browserVersion: string;
+
+  @Column({ nullable: true })
+  deviceModel: string;
+
+  @Column({ nullable: true })
+  deviceType: string;
+
+  @Column({ nullable: true })
+  deviceVendor: string;
+
+  @Column({ nullable: true })
+  os: string;
+
+  @Column({ nullable: true })
+  osVersion: string;
 
   @CreateDateColumn()
   createdAt: Date;

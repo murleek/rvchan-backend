@@ -3,10 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { SessionsService } from './sessions.service';
 
-import { RefreshTokenEntity } from 'src/sessions/entities/refresh-token.entity';
+import { SessionsEntity } from 'src/sessions/entities/sessions.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RefreshTokenEntity])],
+  imports: [TypeOrmModule.forFeature([SessionsEntity])],
   providers: [SessionsService],
   exports: [SessionsService],
 })

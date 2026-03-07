@@ -35,6 +35,7 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
+  app.setGlobalPrefix('api');
 
   await app.register(cors, {
     origin: '*',

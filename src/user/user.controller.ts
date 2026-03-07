@@ -15,9 +15,9 @@ import { SessionsService } from 'src/sessions/sessions.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 
 import { LogoutDeviceDto } from 'src/auth/dto/auth.dto';
-import { InitUserDto, UsernameDto, UsernameSchema } from './dto/user.dto';
+import { GetUserDto, InitUserDto } from './dto/user.dto';
 
-import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { States } from './decorators/authorization.decorator';
 
 import { UserState } from './types/user.types';
@@ -29,6 +29,13 @@ export class UserController {
     private readonly userService: UserService,
     private readonly sessionService: SessionsService,
   ) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  @States()
+  async getMe(@CurrentUser() user: { id: number; deviceId: string }) {
+    return this.userService.getUser(user.id);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get('devices')
@@ -65,5 +72,13 @@ export class UserController {
   async init(@CurrentUser('id') id: number, @Body() dto: InitUserDto) {
     await this.userService.initUser(id, dto);
     return { statusCode: 200, message: 'User initialized' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @States(UserState.ACTIVE)
+  @Post('get-user')
+  async getUser(@CurrentUser() user: UserEntity, @Body() dto: GetUserDto) {
+    const foundUser = await this.userService.getUserByUsername(dto.username);
+    return foundUser;
   }
 }

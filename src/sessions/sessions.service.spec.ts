@@ -2,13 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SessionsService } from './sessions.service';
 import Redis from 'ioredis';
 import { LessThan, Repository } from 'typeorm';
-import { RefreshTokenEntity } from './entities/refresh-token.entity';
+import { SessionsEntity } from './entities/sessions.entity';
 import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 
 describe('SessionsService', () => {
   let service: SessionsService;
   let redisMock: Redis;
-  let repoMock: Repository<RefreshTokenEntity>;
+  let repoMock: Repository<SessionsEntity>;
 
   beforeEach(async () => {
     redisMock = {
@@ -35,14 +35,14 @@ describe('SessionsService', () => {
         SessionsService,
         { provide: 'REDIS', useValue: redisMock },
         {
-          provide: getRepositoryToken(RefreshTokenEntity),
+          provide: getRepositoryToken(SessionsEntity),
           useValue: repoMock,
         },
       ],
     }).compile();
 
     service = module.get<SessionsService>(SessionsService);
-    repoMock = module.get(getRepositoryToken(RefreshTokenEntity));
+    repoMock = module.get(getRepositoryToken(SessionsEntity));
   });
 
   it('should be defined', () => {

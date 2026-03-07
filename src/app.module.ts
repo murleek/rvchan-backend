@@ -3,8 +3,8 @@ import { Module } from '@nestjs/common';
 
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 
-import { HttpExceptionFilter } from './filters/http-exception.filter';
-import { NotFoundExceptionFilter } from './filters/404.filter';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { NotFoundExceptionFilter } from './common/filters/404.filter';
 
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
@@ -16,6 +16,8 @@ import { DatabaseModule } from './db/database.module';
 import { SessionsModule } from './sessions/sessions.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { UserAgentInterceptor } from './common/interceptors/user-agent.interceptor';
+import { IpInterceptor } from './common/interceptors/ip.interceptor';
 
 @Module({
   imports: [
@@ -40,6 +42,14 @@ import { AuthModule } from './auth/auth.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: ZodSerializerInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: UserAgentInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: IpInterceptor,
     },
     {
       provide: APP_FILTER,

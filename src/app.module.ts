@@ -1,4 +1,4 @@
-import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { Module } from '@nestjs/common';
 
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
@@ -18,9 +18,36 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { UserAgentInterceptor } from './common/interceptors/user-agent.interceptor';
 import { IpInterceptor } from './common/interceptors/ip.interceptor';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import { ThrottlerGuard } from './common/guards/throttler.guard';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          name: 'short',
+          ttl: 1000,
+          limit: 3,
+        },
+        {
+          name: 'medium',
+          ttl: 10000,
+          limit: 20,
+        },
+        {
+          name: 'long',
+          ttl: 60000,
+          limit: 100,
+        },
+      ],
+      storage: new ThrottlerStorageRedisService({
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: Number(process.env.REDIS_PORT) || 6379,
+        password: process.env.REDIS_PASSWORD,
+      }),
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -35,6 +62,10 @@ import { IpInterceptor } from './common/interceptors/ip.interceptor';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_PIPE,
       useClass: ZodValidationPipe,

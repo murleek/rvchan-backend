@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
 
 import { UserEntity } from './entities/user.entity';
 import { UserMapper } from './mappers/public-user.mapper';
-import { InitUserRequest } from './dto/user.dto';
+import { EditProfileDto, InitUserRequest } from './dto/user.dto';
 
 @Injectable()
 export class UserService {
@@ -52,6 +52,35 @@ export class UserService {
     return UserMapper.toPublic(user);
   }
 
+  async editProfile(id: number, dto: EditProfileDto) {
+    const user = await this.usersRepo.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (dto.username) {
+      const usernameCheck = await this.isUsernameAvailable(dto.username, user);
+      if (!usernameCheck.available) {
+        if (usernameCheck.message === 'reservedId') {
+          dto.username = `id${user.id}`;
+        } else {
+          throw new BadRequestException(usernameCheck);
+        }
+      }
+    }
+
+    const updatedUser = { ...user, ...dto } as UserEntity;
+
+    if (updatedUser.state === 'INIT') {
+      updatedUser.state = 'ACTIVE';
+    }
+
+    await this.usersRepo.save(updatedUser);
+
+    return UserMapper.toPublic(updatedUser);
+  }
+
   async getUser(id: number) {
     const userFromDb = await this.findById(id);
 
@@ -62,7 +91,21 @@ export class UserService {
     return UserMapper.toPublic(userFromDb);
   }
 
-  async getUserByUsername(username: string) {
+  findAll() {
+    return this.usersRepo
+      .find()
+      .then((users) => users.map(UserMapper.toPublic));
+  }
+
+  async findByEmail(email: string) {
+    return this.usersRepo.findOne({ where: { email } });
+  }
+
+  async findById(id: number) {
+    return this.usersRepo.findOne({ where: { id } });
+  }
+
+  async findByUsername(username: string) {
     const validationResult = this.validateUsername(username);
     if (validationResult && validationResult !== 'reservedId') {
       throw new BadRequestException(validationResult);
@@ -88,20 +131,6 @@ export class UserService {
     }
 
     return UserMapper.toPublic(userFromDb);
-  }
-
-  findAll() {
-    return this.usersRepo
-      .find()
-      .then((users) => users.map(UserMapper.toPublic));
-  }
-
-  async findByEmail(email: string) {
-    return this.usersRepo.findOne({ where: { email } });
-  }
-
-  async findById(id: number) {
-    return this.usersRepo.findOne({ where: { id } });
   }
 
   validateUsername(username) {
@@ -183,5 +212,30 @@ export class UserService {
     }
 
     await this.usersRepo.save(newUser);
+  }
+  async searchUsers(search: string) {
+    const shit = await this.usersRepo
+      .createQueryBuilder('u')
+      .addSelect(
+        `
+      ts_rank(u.search_vector, to_tsquery('simple', :search || ':*')) * 2
+      + similarity(u.username, :search) * 3
+      + similarity(u."firstName", :search) * 1.5
+      + CASE WHEN u.username ILIKE :search THEN 5 ELSE 0 END
+    `,
+        'rank',
+      )
+      .where('u.state = :state', { state: 'ACTIVE' })
+      .andWhere(
+        `u.search_vector @@ to_tsquery('simple', :search || ':*') 
+        OR u.username % :search`,
+      )
+      .orderBy(`rank`, 'DESC')
+
+      .setParameter('search', search)
+      .limit(20)
+      .getRawAndEntities();
+
+    return shit.entities.map(UserMapper.toShortPublic);
   }
 }

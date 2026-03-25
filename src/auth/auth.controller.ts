@@ -8,11 +8,15 @@ import { States } from 'src/user/decorators/authorization.decorator';
 import { type FastifyRequest } from 'fastify';
 import { UserAgent } from 'src/common/decorators/user-agent.decorator';
 import type { ParsedUserAgent } from 'src/common/interfaces/user-agent.interface';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle({
+    default: { ttl: 60000, limit: 2 },
+  })
   @Post('register')
   @States()
   register(@Body() dto: CreateUserDto) {
@@ -20,6 +24,9 @@ export class AuthController {
     return user;
   }
 
+  @Throttle({
+    default: { ttl: 60000, limit: 5 },
+  })
   @Post('login')
   @States()
   async login(
@@ -36,6 +43,9 @@ export class AuthController {
     return auth;
   }
 
+  @Throttle({
+    default: { ttl: 60000, limit: 5 },
+  })
   @Post('refresh')
   @States()
   refresh(

@@ -27,6 +27,13 @@ export const PublicUserSchema = UserSchema.omit({
   password: true,
 });
 
+export const ShortPublicUserSchema = PublicUserSchema.pick({
+  id: true,
+  username: true,
+  firstName: true,
+  lastName: true,
+});
+
 export const CreateUserSchema = UserSchema.pick({
   email: true,
   password: true,
@@ -39,17 +46,33 @@ export const UpdateUserSchema = UserSchema.partial().omit({
   password: true,
 });
 
+export const EditProfileSchema = UserSchema.pick({
+  username: true,
+  firstName: true,
+  lastName: true,
+  description: true,
+  isPrivate: true,
+}).partial();
+
 export const UsernameSchema = InitUserSchema.pick({ username: true });
 export const GetUserSchema = z.object({
   username: UsernameObject,
 });
 
+export const SearchUsersSchema = z.object({
+  q: z.string().min(1).max(100),
+});
+
 export type User = z.infer<typeof UserSchema>;
 export type InitUserRequest = z.infer<typeof InitUserSchema>;
 export type PublicUser = z.infer<typeof PublicUserSchema>;
+export type ShortPublicUser = z.infer<typeof ShortPublicUserSchema>;
 export type CreateUserRequest = z.infer<typeof CreateUserSchema>;
 export type UpdateUserRequest = z.infer<typeof UpdateUserSchema>;
 export type UsernameRequest = z.infer<typeof UsernameSchema>;
+export type GetUserRequest = z.infer<typeof GetUserSchema>;
+export type SearchUsersRequest = z.infer<typeof SearchUsersSchema>;
+export type EditProfileRequest = z.infer<typeof EditProfileSchema>;
 
 export class UserDto extends createZodDto(UserSchema) {}
 export class InitUserDto extends createZodDto(InitUserSchema) {}
@@ -59,3 +82,5 @@ export class UpdateUserDto extends createZodDto(UpdateUserSchema) {}
 
 export class UsernameDto extends createZodDto(UsernameSchema) {}
 export class GetUserDto extends createZodDto(GetUserSchema) {}
+export class SearchUsersDto extends createZodDto(SearchUsersSchema) {}
+export class EditProfileDto extends createZodDto(EditProfileSchema) {}

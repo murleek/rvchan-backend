@@ -3,7 +3,9 @@ import {
   Controller,
   Delete,
   Get,
+  Patch,
   Post,
+  Query,
   Req,
   UseGuards,
   UsePipes,
@@ -15,7 +17,12 @@ import { SessionsService } from 'src/sessions/sessions.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 
 import { LogoutDeviceDto } from 'src/auth/dto/auth.dto';
-import { GetUserDto, InitUserDto } from './dto/user.dto';
+import {
+  EditProfileDto,
+  GetUserDto,
+  InitUserDto,
+  SearchUsersDto,
+} from './dto/user.dto';
 
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { States } from './decorators/authorization.decorator';
@@ -36,7 +43,15 @@ export class UserController {
   async getMe(@CurrentUser() user: { id: number; deviceId: string }) {
     return this.userService.getUser(user.id);
   }
-
+  @UseGuards(JwtAuthGuard)
+  @States(UserState.ACTIVE)
+  @Patch('profile')
+  async editProfile(
+    @CurrentUser('id') id: number,
+    @Body() dto: EditProfileDto,
+  ) {
+    return this.userService.editProfile(id, dto);
+  }
   @UseGuards(JwtAuthGuard)
   @Get('devices')
   me(@CurrentUser('id') userId: number) {
@@ -76,9 +91,16 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @States(UserState.ACTIVE)
-  @Post('get-user')
-  async getUser(@CurrentUser() user: UserEntity, @Body() dto: GetUserDto) {
-    const foundUser = await this.userService.getUserByUsername(dto.username);
+  @Get('get-user')
+  async getUser(@CurrentUser() user: UserEntity, @Query() dto: GetUserDto) {
+    const foundUser = await this.userService.findByUsername(dto.username);
     return foundUser;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @States(UserState.ACTIVE)
+  @Get('search')
+  async search(@Query() dto: SearchUsersDto) {
+    return this.userService.searchUsers(dto.q);
   }
 }

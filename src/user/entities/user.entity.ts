@@ -1,7 +1,19 @@
-import { Entity, Column, PrimaryGeneratedColumn, BeforeInsert } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  Index,
+  BeforeInsert,
+  BeforeUpdate,
+} from 'typeorm';
 
 import { UserState } from '../types/user.types';
+import { UserFollowsEntity } from 'src/relationship/entities/user-follows.entity';
 
+@Index('user_search_vector_idx', { synchronize: false })
+@Index('user_username_trgm_idx', { synchronize: false })
+@Index('user_firstname_trgm_idx', { synchronize: false })
 @Entity()
 export class UserEntity {
   @PrimaryGeneratedColumn()
@@ -28,6 +40,15 @@ export class UserEntity {
   @Column({ default: true })
   isPrivate: boolean;
 
-  @Column({ default: UserState.INIT })
+  @Column({ type: 'enum', enum: UserState, default: UserState.INIT })
   state: UserState;
+
+  @OneToMany(() => UserFollowsEntity, (rel) => rel.follower)
+  following: UserFollowsEntity[];
+
+  @OneToMany(() => UserFollowsEntity, (rel) => rel.following)
+  followers: UserFollowsEntity[];
+
+  @Column({ type: 'tsvector', select: false, nullable: true })
+  search_vector?: string;
 }

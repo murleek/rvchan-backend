@@ -21,6 +21,7 @@ import { IpInterceptor } from './common/interceptors/ip.interceptor';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { ThrottlerGuard } from './common/guards/throttler.guard';
+import { RelationshipModule } from './relationship/relationship.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { ThrottlerGuard } from './common/guards/throttler.guard';
     SessionsModule,
     UserModule,
     AuthModule,
+    RelationshipModule,
   ],
   controllers: [AppController],
   providers: [

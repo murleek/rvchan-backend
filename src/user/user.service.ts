@@ -11,12 +11,16 @@ import * as bcrypt from 'bcrypt';
 import { UserEntity } from './entities/user.entity';
 import { UserMapper } from './mappers/public-user.mapper';
 import { EditProfileDto, InitUserRequest } from './dto/user.dto';
+import { RelationshipService } from 'src/relationship/relationship.service';
+import is from 'zod/v4/locales/is.js';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly usersRepo: Repository<UserEntity>,
+
+    private readonly relationshipService: RelationshipService,
   ) {}
 
   async validate(email: string, password: string): Promise<UserEntity> {
@@ -122,9 +126,14 @@ export class UserService {
       return userById;
     }
 
-    const userFromDb = await this.usersRepo.findOne({
-      where: { username: ILike(username) },
-    });
+    const userFromDb = await this.usersRepo
+      .createQueryBuilder('user')
+      .where('LOWER(user.username) = LOWER(:username)', { username })
+      .loadRelationCountAndMap('user.followers', 'user.followers')
+      .loadRelationCountAndMap('user.following', 'user.following')
+      .getOne();
+
+    console.log('userFromDb', userFromDb);
 
     if (!userFromDb) {
       throw new NotFoundException('User not found');
@@ -214,28 +223,48 @@ export class UserService {
     await this.usersRepo.save(newUser);
   }
   async searchUsers(search: string) {
+    const words = search.trim().split(/\s+/); // ['raido', 'ra']
+    const tsQuery = words.map((w) => `${w}:*`).join(' & '); // 'raido:* & ra:*'
+
     const shit = await this.usersRepo
       .createQueryBuilder('u')
       .addSelect(
         `
-      ts_rank(u.search_vector, to_tsquery('simple', :search || ':*')) * 2
+      ts_rank(u.search_vector, to_tsquery('simple', :tsQuery)) * 2
       + similarity(u.username, :search) * 3
       + similarity(u."firstName", :search) * 1.5
       + CASE WHEN u.username ILIKE :search THEN 5 ELSE 0 END
-    `,
+        `,
         'rank',
       )
       .where('u.state = :state', { state: 'ACTIVE' })
       .andWhere(
-        `u.search_vector @@ to_tsquery('simple', :search || ':*') 
-        OR u.username % :search`,
+        `u.search_vector @@ to_tsquery('simple', :tsQuery) 
+      OR u.username % :search`,
       )
-      .orderBy(`rank`, 'DESC')
-
-      .setParameter('search', search)
+      .orderBy('rank', 'DESC')
+      .setParameters({ search, tsQuery })
       .limit(20)
       .getRawAndEntities();
 
     return shit.entities.map(UserMapper.toShortPublic);
+  }
+
+  async getUserProfile(currentUser: UserEntity, username: string) {
+    let user = await this.findByUsername(username);
+
+    const isMine = user.id === currentUser.id;
+    if (!isMine) {
+      const isFollowing = await this.relationshipService.isFollowing(
+        currentUser.id,
+        user.id,
+      );
+      const isFollowed = await this.relationshipService.isFollowing(
+        user.id,
+        currentUser.id,
+      );
+      user = { ...user, isFollowed, isFollowing };
+    }
+    return { ...user, isMine };
   }
 }

@@ -6,9 +6,7 @@ import {
   Patch,
   Post,
   Query,
-  Req,
   UseGuards,
-  UsePipes,
 } from '@nestjs/common';
 
 import { UserService } from './user.service';
@@ -93,7 +91,7 @@ export class UserController {
   @States(UserState.ACTIVE)
   @Get('get-user')
   async getUser(@CurrentUser() user: UserEntity, @Query() dto: GetUserDto) {
-    const foundUser = await this.userService.findByUsername(dto.username);
+    const foundUser = await this.userService.getUserProfile(user, dto.username);
     return foundUser;
   }
 

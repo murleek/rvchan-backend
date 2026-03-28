@@ -16,6 +16,8 @@ export class UserMapper {
       description: user.description,
       isPrivate: user.isPrivate,
       state: user.state,
+      followers: user.followers || 0,
+      following: user.following || 0,
     });
   }
 

@@ -14,6 +14,8 @@ export const UserSchema = z.object({
   firstName: z.string().max(32).optional().nullable(),
   lastName: z.string().max(32).optional().nullable(),
   description: z.string().max(256).optional().nullable(),
+  followers: z.number().optional(),
+  following: z.number().optional(),
 });
 
 export const InitUserSchema = z.object({
@@ -25,6 +27,9 @@ export const InitUserSchema = z.object({
 
 export const PublicUserSchema = UserSchema.omit({
   password: true,
+}).extend({
+  isFollowing: z.boolean().optional(),
+  isFollowed: z.boolean().optional(),
 });
 
 export const ShortPublicUserSchema = PublicUserSchema.pick({

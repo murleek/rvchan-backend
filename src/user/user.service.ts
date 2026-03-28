@@ -133,8 +133,6 @@ export class UserService {
       .loadRelationCountAndMap('user.following', 'user.following')
       .getOne();
 
-    console.log('userFromDb', userFromDb);
-
     if (!userFromDb) {
       throw new NotFoundException('User not found');
     }

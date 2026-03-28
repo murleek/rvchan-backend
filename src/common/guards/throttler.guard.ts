@@ -19,7 +19,6 @@ export class ThrottlerGuard extends _ThrottlerGuard {
     context: ExecutionContext,
     throttlerLimit: ThrottlerLimitDetail,
   ) {
-    console.log(throttlerLimit);
     throw new HttpException(
       {
         message: 'too_many_requests',

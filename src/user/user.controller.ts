@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Patch,
   Post,
@@ -27,6 +28,10 @@ import { States } from './decorators/authorization.decorator';
 
 import { UserState } from './types/user.types';
 import { UserEntity } from './entities/user.entity';
+import { UploadGuard } from 'src/common/guards/upload.guard';
+import { ApiBody, ApiConsumes } from '@nestjs/swagger';
+import type { MultipartFile } from '@fastify/multipart';
+import { ProvidedFile } from 'src/common/decorators/file.decorator';
 
 @Controller('user')
 export class UserController {
@@ -88,7 +93,7 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @States(UserState.ACTIVE)
+  // @States(UserState.ACTIVE)
   @Get('get-user')
   async getUser(@CurrentUser() user: UserEntity, @Query() dto: GetUserDto) {
     const foundUser = await this.userService.getUserProfile(user, dto.username);
@@ -100,5 +105,39 @@ export class UserController {
   @Get('search')
   async search(@Query() dto: SearchUsersDto) {
     return this.userService.searchUsers(dto.q);
+  }
+
+  // @UseGuards(JwtAuthGuard)
+  // @States(UserState.ACTIVE)
+  // @Post('set-avatar')
+  // async setAvatar(
+  //   @CurrentUser() user: UserEntity,
+  //   @Query('fileId') fileId: string,
+  // ) {
+  @Post('avatar/upload')
+  @UseGuards(UploadGuard, JwtAuthGuard)
+  @States(UserState.ACTIVE)
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        // Define the file property for Swagger UI
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'The file to upload',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  async uploadAvatar(
+    @ProvidedFile() file: MultipartFile,
+    @CurrentUser() user: UserEntity,
+  ) {
+    if (!user) throw new ForbiddenException();
+
+    await this.userService.uploadAvatar(user, file);
   }
 }

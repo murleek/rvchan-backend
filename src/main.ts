@@ -5,6 +5,8 @@ import {
   FastifyAdapter,
   type NestFastifyApplication,
 } from '@nestjs/platform-fastify';
+
+import multipart from '@fastify/multipart';
 import cors from '@fastify/cors';
 
 import { AppModule } from './app.module';
@@ -42,6 +44,12 @@ async function bootstrap() {
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     // credentials: true,
+  });
+
+  await app.register(multipart, {
+    limits: {
+      fileSize: 10 * 1024 * 1024,
+    },
   });
 
   const config = new DocumentBuilder()

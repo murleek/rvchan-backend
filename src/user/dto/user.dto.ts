@@ -16,6 +16,7 @@ export const UserSchema = z.object({
   description: z.string().max(256).optional().nullable(),
   followers: z.number().optional(),
   following: z.number().optional(),
+  avatarUrl: z.string().optional().nullable(),
 });
 
 export const InitUserSchema = z.object({
@@ -37,6 +38,7 @@ export const ShortPublicUserSchema = PublicUserSchema.pick({
   username: true,
   firstName: true,
   lastName: true,
+  avatarUrl: true,
 });
 
 export const CreateUserSchema = UserSchema.pick({

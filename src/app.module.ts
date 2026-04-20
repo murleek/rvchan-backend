@@ -22,6 +22,11 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { ThrottlerGuard } from './common/guards/throttler.guard';
 import { RelationshipModule } from './relationship/relationship.module';
+import { MediaModule } from './media/media.module';
+import { BullModule } from '@nestjs/bullmq';
+import { CacheModule } from '@nestjs/cache-manager';
+import KeyvRedis, { Keyv } from '@keyv/redis';
+import { CacheableMemory } from 'cacheable';
 
 @Module({
   imports: [
@@ -49,10 +54,33 @@ import { RelationshipModule } from './relationship/relationship.module';
         password: process.env.REDIS_PASSWORD,
       }),
     }),
+    BullModule.forRoot({
+      connection: {
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: Number(process.env.REDIS_PORT) || 6379,
+        password: process.env.REDIS_PASSWORD,
+      },
+    }),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
+    CacheModule.register({
+      ttl: 0,
+      max: 1000,
+      useFactory: async () => {
+        return {
+          stores: [
+            new Keyv({
+              store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }),
+            }),
+            new KeyvRedis(
+              `redis://:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST || '127.0.0.1'}:${Number(process.env.REDIS_PORT) || 6379}`,
+            ),
+          ],
+        };
+      },
+    }),
 
     RedisModule,
     DatabaseModule,
@@ -60,6 +88,7 @@ import { RelationshipModule } from './relationship/relationship.module';
     UserModule,
     AuthModule,
     RelationshipModule,
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [

@@ -4,8 +4,6 @@ import {
   PrimaryGeneratedColumn,
   OneToMany,
   Index,
-  BeforeInsert,
-  BeforeUpdate,
 } from 'typeorm';
 
 import { UserState } from '../types/user.types';
@@ -51,4 +49,7 @@ export class UserEntity {
 
   @Column({ type: 'tsvector', select: false, nullable: true })
   search_vector?: string;
+
+  @Column({ nullable: true })
+  avatarUrl: string;
 }

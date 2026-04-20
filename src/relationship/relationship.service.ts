@@ -15,6 +15,10 @@ export class RelationshipService {
   ) {}
 
   async block(userAId: number, userBId: number) {
+    if (userAId === userBId) {
+      throw new BadRequestException('cannot-follow-self');
+    }
+
     await this.followsRepo.delete([
       { follower: { id: userAId }, following: { id: userBId } },
       { follower: { id: userBId }, following: { id: userAId } },
@@ -51,6 +55,9 @@ export class RelationshipService {
   }
 
   async follow(userAId: number, userBId: number) {
+    if (userAId === userBId) {
+      throw new BadRequestException('cannot-follow-self');
+    }
     if (await this.isBlocked(userAId, userBId)) {
       throw new BadRequestException('user-blocked');
     }

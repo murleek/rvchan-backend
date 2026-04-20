@@ -12,7 +12,10 @@ import { UserEntity } from './entities/user.entity';
 import { UserMapper } from './mappers/public-user.mapper';
 import { EditProfileDto, InitUserRequest } from './dto/user.dto';
 import { RelationshipService } from 'src/relationship/relationship.service';
-import is from 'zod/v4/locales/is.js';
+import { MediaService } from 'src/media/media.service';
+import { MultipartFile } from '@fastify/multipart';
+import { R2Provider, SIZES } from 'src/media/r2.provider';
+import sharp from 'sharp';
 
 @Injectable()
 export class UserService {
@@ -21,6 +24,7 @@ export class UserService {
     private readonly usersRepo: Repository<UserEntity>,
 
     private readonly relationshipService: RelationshipService,
+    private readonly cf: R2Provider,
   ) {}
 
   async validate(email: string, password: string): Promise<UserEntity> {
@@ -85,11 +89,30 @@ export class UserService {
     return UserMapper.toPublic(updatedUser);
   }
 
+  // async setAvatar(id: number, fileId: string) {
+  //   const user = await this.usersRepo.findOne({ where: { id } });
+
+  //   if (!user) {
+  //     throw new BadRequestException('User not found');
+  //   }
+
+  //   const media = await this.media.findById(fileId);
+  //   console.log('media', media);
+  //   if (!media) {
+  //     throw new BadRequestException('File not found');
+  //   }
+
+  //   user.avatarUrl = fileId;
+  //   await this.usersRepo.save(user);
+
+  //   return UserMapper.toPublic(user);
+  // }
+
   async getUser(id: number) {
     const userFromDb = await this.findById(id);
 
     if (!userFromDb) {
-      throw new NotFoundException('User not found');
+      throw new BadRequestException('User not found');
     }
 
     return UserMapper.toPublic(userFromDb);
@@ -106,6 +129,12 @@ export class UserService {
   }
 
   async findById(id: number) {
+    return this.usersRepo
+      .createQueryBuilder('user')
+      .where('user.id = :id', { id })
+      .loadRelationCountAndMap('user.followers', 'user.followers')
+      .loadRelationCountAndMap('user.following', 'user.following')
+      .getOne();
     return this.usersRepo.findOne({ where: { id } });
   }
 
@@ -251,8 +280,8 @@ export class UserService {
   async getUserProfile(currentUser: UserEntity, username: string) {
     let user = await this.findByUsername(username);
 
-    const isMine = user.id === currentUser.id;
-    if (!isMine) {
+    const isMine = currentUser && user.id === currentUser.id;
+    if (currentUser && !isMine) {
       const isFollowing = await this.relationshipService.isFollowing(
         currentUser.id,
         user.id,
@@ -264,5 +293,29 @@ export class UserService {
       user = { ...user, isFollowed, isFollowing };
     }
     return { ...user, isMine };
+  }
+
+  async uploadAvatar(currentUser: UserEntity, avatar: MultipartFile) {
+    const buffer = await avatar.toBuffer();
+
+    const image = sharp(buffer).rotate().resize({
+      width: SIZES[0],
+      height: SIZES[0],
+      fit: 'cover',
+    });
+
+    const file = await this.cf.uploadFile(
+      {
+        buffer: await image.toBuffer(),
+        filename: avatar.filename,
+        mimetype: avatar.mimetype,
+        isBuffer: true,
+      },
+      currentUser,
+    );
+
+    await this.usersRepo.save({ ...currentUser, avatarUrl: file.id });
+
+    return { ok: true };
   }
 }

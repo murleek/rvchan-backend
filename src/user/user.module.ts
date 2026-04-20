@@ -5,12 +5,14 @@ import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { SessionsModule } from 'src/sessions/sessions.module';
 import { RelationshipModule } from 'src/relationship/relationship.module';
+import { MediaModule } from 'src/media/media.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity]),
     SessionsModule,
     RelationshipModule,
+    MediaModule,
   ],
   providers: [UserService],
   controllers: [UserController],

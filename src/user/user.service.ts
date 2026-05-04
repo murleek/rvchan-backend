@@ -318,4 +318,8 @@ export class UserService {
 
     return { ok: true };
   }
+
+  async updateLastActive(id: number) {
+    await this.usersRepo.update({ id }, { lastActiveAt: new Date() });
+  }
 }

@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   OneToMany,
   Index,
+  CreateDateColumn,
 } from 'typeorm';
 
 import { UserState } from '../types/user.types';
@@ -15,41 +16,47 @@ import { UserFollowsEntity } from 'src/relationship/entities/user-follows.entity
 @Entity()
 export class UserEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ unique: true })
-  email: string;
+  email!: string;
 
   @Column({ default: '' })
-  firstName: string;
+  firstName!: string;
 
   @Column({ nullable: true })
-  lastName: string;
+  lastName!: string;
 
   @Column({ nullable: true })
-  description: string;
+  description!: string;
 
   @Column()
-  password: string;
+  password!: string;
 
   @Column({ unique: true, nullable: true })
-  username: string;
+  username!: string;
 
   @Column({ default: true })
-  isPrivate: boolean;
+  isPrivate!: boolean;
 
   @Column({ type: 'enum', enum: UserState, default: UserState.INIT })
-  state: UserState;
+  state!: UserState;
 
   @OneToMany(() => UserFollowsEntity, (rel) => rel.follower)
-  following: UserFollowsEntity[];
+  following!: UserFollowsEntity[];
 
   @OneToMany(() => UserFollowsEntity, (rel) => rel.following)
-  followers: UserFollowsEntity[];
+  followers!: UserFollowsEntity[];
 
   @Column({ type: 'tsvector', select: false, nullable: true })
   search_vector?: string;
 
   @Column({ nullable: true })
-  avatarUrl: string;
+  avatarUrl!: string;
+
+  @CreateDateColumn()
+  createdAt!: Date;
+
+  @CreateDateColumn()
+  lastActiveAt!: Date;
 }

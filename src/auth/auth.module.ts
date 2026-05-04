@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
@@ -11,20 +11,17 @@ import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { SessionsEntity } from '../sessions/entities/sessions.entity';
 
-import type { StringValue } from 'ms';
 import { UserEntity } from 'src/user/entities/user.entity';
+import { NotificationModule } from 'src/notification/notification.module';
+import { SessionsModule } from 'src/sessions/sessions.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([SessionsEntity, UserEntity]),
     UserModule,
     PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET,
-      signOptions: {
-        expiresIn: (process.env.JWT_EXPIRES_IN as StringValue | number) ?? '1d',
-      },
-    }),
+    NotificationModule,
+    SessionsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtAccessStrategy, JwtRefreshStrategy],

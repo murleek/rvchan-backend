@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserFollowsEntity } from './entities/user-follows.entity';
 import { Repository } from 'typeorm';
 import { UserBlocksEntity } from './entities/user-blocks.entity';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class RelationshipService {
@@ -12,6 +13,8 @@ export class RelationshipService {
 
     @InjectRepository(UserBlocksEntity)
     private readonly blockRepo: Repository<UserBlocksEntity>,
+
+    private readonly notificationService: NotificationService,
   ) {}
 
   async block(userAId: number, userBId: number) {
@@ -70,6 +73,15 @@ export class RelationshipService {
       follower: { id: userAId },
       following: { id: userBId },
     });
+
+    if (await this.isFollowing(userBId, userAId)) {
+      this.notificationService.followAccepted(
+        userAId.toString(),
+        userBId.toString(),
+      );
+    } else {
+      this.notificationService.follow(userAId.toString(), userBId.toString());
+    }
 
     return { success: true };
   }

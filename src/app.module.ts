@@ -27,6 +27,8 @@ import { BullModule } from '@nestjs/bullmq';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis, { Keyv } from '@keyv/redis';
 import { CacheableMemory } from 'cacheable';
+import { WebsocketModule } from './websocket/websocket.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -81,6 +83,7 @@ import { CacheableMemory } from 'cacheable';
         };
       },
     }),
+    EventEmitterModule.forRoot(),
 
     RedisModule,
     DatabaseModule,
@@ -89,6 +92,7 @@ import { CacheableMemory } from 'cacheable';
     AuthModule,
     RelationshipModule,
     MediaModule,
+    WebsocketModule,
   ],
   controllers: [AppController],
   providers: [

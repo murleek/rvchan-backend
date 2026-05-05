@@ -14,14 +14,18 @@ import {
 @Index(['following'])
 export class UserFollowsEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
-  @ManyToOne(() => UserEntity, (user) => user.following)
-  follower: UserEntity;
+  @ManyToOne(() => UserEntity, (user) => user.following, {
+    onDelete: 'CASCADE',
+  })
+  follower!: UserEntity;
 
-  @ManyToOne(() => UserEntity, (user) => user.followers)
-  following: UserEntity;
+  @ManyToOne(() => UserEntity, (user) => user.followers, {
+    onDelete: 'CASCADE',
+  })
+  following!: UserEntity;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

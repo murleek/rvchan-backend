@@ -21,7 +21,7 @@ export class NotificationEntity extends BaseEntity {
   @JoinColumn({ name: 'recipient_id' })
   recipient!: UserEntity;
 
-  @ManyToOne(() => UserEntity)
+  @ManyToOne(() => UserEntity, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'actor_id' })
   actor?: UserEntity;
 

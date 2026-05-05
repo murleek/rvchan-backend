@@ -14,14 +14,14 @@ import {
 @Index(['blocked'])
 export class UserBlocksEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
-  @ManyToOne(() => UserEntity)
-  blocker: UserEntity;
+  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  blocker!: UserEntity;
 
-  @ManyToOne(() => UserEntity)
-  blocked: UserEntity;
+  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
+  blocked!: UserEntity;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 }

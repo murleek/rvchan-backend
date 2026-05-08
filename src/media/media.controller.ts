@@ -56,16 +56,16 @@ export class MediaController {
       required: ['file'],
     },
   })
-  async getUploadUrl(
-    @ProvidedFile() file: MultipartFile,
-    @CurrentUser() user: UserEntity,
-  ) {
-    if (!user) throw new ForbiddenException();
+  // async getUploadUrl(
+  //   @ProvidedFile() file: MultipartFile,
+  //   @CurrentUser() user: UserEntity,
+  // ) {
+  //   if (!user) throw new ForbiddenException();
 
-    // const media = await this.mediaService.create(user.id);
+  //   // const media = await this.mediaService.create(user.id);
 
-    return await this.cf.uploadFile(file, user);
-  }
+  //   return await this.cf.uploadFile(file, user);
+  // }
 
   // @Post('mark-as-uploaded')
   // @ApiOkResponse()
@@ -77,7 +77,6 @@ export class MediaController {
   //   if (!user) throw new ForbiddenException();
   //   return await this.mediaService.markAsUploadedSafe(params.id, ability);
   // }
-
   @Get('file/:id')
   async getDownloadUrl(
     @Param('id') id: string,

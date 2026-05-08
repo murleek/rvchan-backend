@@ -9,6 +9,7 @@ import { NotificationMapper } from './mappers/notification.mapper';
 import { ParsedUserAgent } from 'src/common/interfaces/user-agent.interface';
 import { ICurrentUser } from 'src/user/types/user.types';
 import { SessionsService } from 'src/sessions/sessions.service';
+import { R2Provider } from 'src/media/r2.provider';
 
 @Injectable()
 export class NotificationService {
@@ -17,6 +18,7 @@ export class NotificationService {
     @InjectRepository(NotificationEntity)
     private notificationRepo: Repository<NotificationEntity>,
     private readonly sessions: SessionsService,
+    private readonly cf: R2Provider,
   ) {}
 
   async follow(actorId: string, targetId: string) {
@@ -49,7 +51,7 @@ export class NotificationService {
     });
   }
 
-  async markAllAsSeen(userId: string, deviceId: string) {
+  async markAllAsSeen(userId: number, deviceId: string) {
     const session = await this.sessions.getSession(deviceId);
 
     await this.notificationRepo
@@ -78,6 +80,21 @@ export class NotificationService {
     await this.notificationRepo.save(notification);
   }
 
+  async getPublicNotification(notification: NotificationEntity) {
+    const publicNotification = NotificationMapper.toPublic(notification);
+
+    try {
+      if (publicNotification.actor?.avatarUrl) {
+        publicNotification.actor.avatarUrl = await this.cf.getAllDownloadUrl(
+          publicNotification.actor.avatarUrl as string,
+        );
+      }
+    } catch (e) {
+      console.error('Error fetching avatar URL:', e);
+    }
+    return publicNotification;
+  }
+
   async getNotifications(user: ICurrentUser) {
     const session = await this.sessions.getSession(user.deviceId);
 
@@ -101,7 +118,9 @@ export class NotificationService {
 
     const notifications = await qb.getMany();
 
-    return notifications.map(NotificationMapper.toPublic);
+    return Promise.all(
+      notifications.map(async (n) => await this.getPublicNotification(n)),
+    );
   }
 
   async countUnseenNotifications(userId: number, deviceId: string) {

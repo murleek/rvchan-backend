@@ -6,7 +6,11 @@ import {
 import { UserEntity } from '../entities/user.entity';
 
 export class UserMapper {
-  static toPublic(user: UserEntity): PublicUser {
+  static toPublic(
+    user: Omit<UserEntity, 'avatarUrl'> & {
+      avatarUrl: string | Record<number, string>;
+    },
+  ): PublicUser {
     return PublicUserSchema.parse({
       id: user.id,
       email: user.email,
@@ -19,6 +23,10 @@ export class UserMapper {
       avatarUrl: user.avatarUrl,
       followers: user.followers || 0,
       following: user.following || 0,
+      lastActiveAt:
+        user.lastActiveAt.getTime() > Date.now() - 60 * 1000
+          ? 'now'
+          : user.lastActiveAt,
     });
   }
 

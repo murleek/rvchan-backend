@@ -10,11 +10,10 @@ import * as bcrypt from 'bcrypt';
 
 import { UserEntity } from './entities/user.entity';
 import { UserMapper } from './mappers/public-user.mapper';
-import { EditProfileDto, InitUserRequest } from './dto/user.dto';
+import { EditProfileDto, InitUserRequest, PublicUser } from './dto/user.dto';
 import { RelationshipService } from 'src/relationship/relationship.service';
-import { MediaService } from 'src/media/media.service';
 import { MultipartFile } from '@fastify/multipart';
-import { R2Provider, SIZES } from 'src/media/r2.provider';
+import { PathType, R2Provider, SIZES } from 'src/media/r2.provider';
 import sharp from 'sharp';
 
 @Injectable()
@@ -43,8 +42,36 @@ export class UserService {
     return user;
   }
 
+  async getPublicUser(user: UserEntity): Promise<PublicUser> {
+    const userPublic = UserMapper.toPublic(user);
+
+    try {
+      if (user.avatarUrl) {
+        userPublic.avatarUrl = await this.cf.getAllDownloadUrl(user.avatarUrl);
+      }
+    } catch (e) {
+      console.error('Error fetching avatar URL:', e);
+    }
+
+    return userPublic;
+  }
+
+  async getShortPublicUser(user: UserEntity) {
+    const userPublic = UserMapper.toShortPublic(user);
+
+    try {
+      if (user.avatarUrl) {
+        userPublic.avatarUrl = await this.cf.getAllDownloadUrl(user.avatarUrl);
+      }
+    } catch (e) {
+      console.error('Error fetching avatar URL:', e);
+    }
+
+    return userPublic;
+  }
+
   async create(email: string, password: string) {
-    let existingUser = await this.findByEmail(email);
+    const existingUser = await this.findByEmail(email);
 
     if (existingUser) {
       throw new BadRequestException('user_exists');
@@ -52,12 +79,12 @@ export class UserService {
 
     const hash = await bcrypt.hash(password, 10);
 
-    let user = await this.usersRepo.save({
+    const user = await this.usersRepo.save({
       email,
       password: hash,
     });
 
-    return UserMapper.toPublic(user);
+    return await this.getPublicUser(user);
   }
 
   async editProfile(id: number, dto: EditProfileDto) {
@@ -86,7 +113,7 @@ export class UserService {
 
     await this.usersRepo.save(updatedUser);
 
-    return UserMapper.toPublic(updatedUser);
+    return await this.getPublicUser(updatedUser);
   }
 
   // async setAvatar(id: number, fileId: string) {
@@ -105,7 +132,7 @@ export class UserService {
   //   user.avatarUrl = fileId;
   //   await this.usersRepo.save(user);
 
-  //   return UserMapper.toPublic(user);
+  //   return await this.getPublicUser(user);
   // }
 
   async getUser(id: number) {
@@ -115,13 +142,7 @@ export class UserService {
       throw new BadRequestException('User not found');
     }
 
-    return UserMapper.toPublic(userFromDb);
-  }
-
-  findAll() {
-    return this.usersRepo
-      .find()
-      .then((users) => users.map(UserMapper.toPublic));
+    return await this.getPublicUser(userFromDb);
   }
 
   async findByEmail(email: string) {
@@ -135,7 +156,6 @@ export class UserService {
       .loadRelationCountAndMap('user.followers', 'user.followers')
       .loadRelationCountAndMap('user.following', 'user.following')
       .getOne();
-    return this.usersRepo.findOne({ where: { id } });
   }
 
   async findByUsername(username: string) {
@@ -166,10 +186,10 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    return UserMapper.toPublic(userFromDb);
+    return await this.getPublicUser(userFromDb);
   }
 
-  validateUsername(username) {
+  validateUsername(username: string) {
     if (username.startsWith('id')) {
       const reservedId = username.slice(2);
       if (/^\d+$/.test(reservedId) && Number(reservedId) > 0) {
@@ -274,7 +294,9 @@ export class UserService {
       .limit(20)
       .getRawAndEntities();
 
-    return shit.entities.map(UserMapper.toShortPublic);
+    return Promise.all(
+      shit.entities.map(async (u) => await this.getShortPublicUser(u)),
+    );
   }
 
   async getUserProfile(currentUser: UserEntity, username: string) {
@@ -312,6 +334,7 @@ export class UserService {
         isBuffer: true,
       },
       currentUser,
+      PathType.AVATAR,
     );
 
     await this.usersRepo.save({ ...currentUser, avatarUrl: file.id });

@@ -1,5 +1,5 @@
 export type JwtAccessPayload = {
-  sub: string;
+  sub: number;
   deviceId: string;
 };
 

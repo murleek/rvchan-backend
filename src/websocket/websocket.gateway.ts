@@ -9,10 +9,12 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WsJwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
-import { NotificationMapper } from 'src/notification/mappers/notification.mapper';
+import { JwtAccessPayload } from 'src/auth/types/jwt.types';
+import { NotificationEntity } from 'src/notification/entities/notification.entity';
 import { NotificationService } from 'src/notification/notification.service';
 import { RedisService } from 'src/redis/redis.service';
 import { SessionsService } from 'src/sessions/sessions.service';
+import { UserEntity } from 'src/user/entities/user.entity';
 import { UserService } from 'src/user/user.service';
 
 const ONLINE_KEY = (userId: number | string) => `online:user:${userId}`;
@@ -35,8 +37,9 @@ export class WebsocketGateway
 
   async handleConnection(client: Socket) {
     try {
-      const token = client.handshake.auth?.token;
-      const payload: any = await this.sessionsService.verify(token);
+      const token: string = client.handshake.auth?.token;
+      const payload: JwtAccessPayload =
+        await this.sessionsService.verify(token);
 
       const userId = payload.sub;
 
@@ -69,7 +72,7 @@ export class WebsocketGateway
   }
 
   async handleDisconnect(client: Socket) {
-    const user = client.data.user;
+    const user: UserEntity | null = client.data.user;
     if (!user) return;
 
     const userId = user.id;
@@ -82,7 +85,7 @@ export class WebsocketGateway
     }
   }
 
-  sendToUser(userId: string, event: string, data: any) {
+  sendToUser(userId: number, event: string, data: any) {
     this.server.to(USER_CHANNEL(userId)).emit(event, data);
   }
 
@@ -96,7 +99,7 @@ export class WebsocketGateway
     const sockets = await this.server.in(USER_CHANNEL(userId)).fetchSockets();
 
     for (const socket of sockets) {
-      const deviceId = socket.data.user?.deviceId;
+      const deviceId: string = socket.data.user?.deviceId;
       if (!deviceId) continue;
 
       const unseen = await this.notificationService.countUnseenNotifications(
@@ -109,14 +112,14 @@ export class WebsocketGateway
   }
 
   // При новом уведомлении каждому сокету юзера отправляем свой счётчик
-  async notifyNew({ notification }: { notification: any }) {
+  async notifyNew({ notification }: { notification: NotificationEntity }) {
     try {
       const userId = notification.recipient.id;
 
       const sockets = await this.server.in(USER_CHANNEL(userId)).fetchSockets();
 
       for (const socket of sockets) {
-        const deviceId = socket.data.user?.deviceId;
+        const deviceId: string = socket.data.user?.deviceId;
         if (!deviceId) continue;
 
         const deviceUnseen =
@@ -126,7 +129,8 @@ export class WebsocketGateway
           );
 
         socket.emit('notification:new', {
-          notification: NotificationMapper.toPublic(notification),
+          notification:
+            await this.notificationService.getPublicNotification(notification),
           unseen: deviceUnseen,
         });
       }
@@ -135,15 +139,15 @@ export class WebsocketGateway
     }
   }
 
-  notifyUpdate(notification: any) {
+  async notifyUpdate(notification: NotificationEntity) {
     this.sendToUser(
       notification.recipient.id,
       'notification:update',
-      NotificationMapper.toPublic(notification),
+      await this.notificationService.getPublicNotification(notification),
     );
   }
 
-  notifyDelete(notificationId: string, userId: string) {
+  notifyDelete(notificationId: string, userId: number) {
     this.sendToUser(userId, 'notification:delete', {
       id: notificationId,
     });
@@ -152,7 +156,8 @@ export class WebsocketGateway
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('notification:seen')
   async handleSeen(@ConnectedSocket() client: Socket) {
-    const { id: userId, deviceId } = client.data.user;
+    const { id: userId, deviceId }: { id: number; deviceId: string } =
+      client.data.user;
 
     await this.notificationService.markAllAsSeen(userId, deviceId);
 
@@ -164,7 +169,7 @@ export class WebsocketGateway
 
   @UseGuards(WsJwtAuthGuard)
   @SubscribeMessage('user:get')
-  async getUser(@ConnectedSocket() client: Socket) {
+  getUser(@ConnectedSocket() client: Socket) {
     const user = client.data.user;
 
     return { user };
@@ -175,7 +180,8 @@ export class WebsocketGateway
   async handlePing(
     @ConnectedSocket() client: Socket,
   ): Promise<{ event: string }> {
-    const { id: userId, deviceId } = client.data.user;
+    const { id: userId, deviceId }: { id: number; deviceId: string } =
+      client.data.user;
 
     await this.userService.updateLastActive(userId);
     await this.redisService.expire(ONLINE_KEY(userId), ONLINE_TTL);

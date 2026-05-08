@@ -5,9 +5,12 @@ export const AUTH_KEY = 'authorization';
 
 export type IncludeOrExclude<T> = { include: T[] } | { exclude: T[] };
 
-function isIncludeOrExclude(obj: any): obj is IncludeOrExclude<UserState> {
+function isIncludeOrExclude(obj: unknown): obj is IncludeOrExclude<UserState> {
   return (
-    obj && typeof obj === 'object' && ('include' in obj || 'exclude' in obj)
+    typeof obj === 'object' &&
+    obj !== null &&
+    !Array.isArray(obj) &&
+    ('include' in obj || 'exclude' in obj)
   );
 }
 
@@ -23,7 +26,7 @@ export const States = (
 ) => {
   if (states.length === 0) return Authorize({});
   if (states.length === 1 && isIncludeOrExclude(states[0])) {
-    return Authorize({ states: states[0] as IncludeOrExclude<UserState> });
+    return Authorize({ states: states[0] });
   }
 
   return Authorize({ states: { include: states as UserState[] } });

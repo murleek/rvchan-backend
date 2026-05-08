@@ -2,7 +2,6 @@ import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { States } from 'src/user/decorators/authorization.decorator';
-import { UserService } from 'src/user/user.service';
 import { RelationshipService } from './relationship.service';
 import { FollowDto } from './dto/relationship.dto';
 
@@ -53,27 +52,21 @@ export class RelationshipController {
   @UseGuards(JwtAuthGuard)
   @Get('following/:id')
   @States()
-  async getFollowing(
-    @Param('id') id: number,
-    @CurrentUser('id') userId: number,
-  ) {
+  async getFollowing(@Param('id') id: number) {
     return this.relationshipService.getFollowing(id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('followers/:id')
   @States()
-  async getFollowers(
-    @Param('id') id: number,
-    @CurrentUser('id') userId: number,
-  ) {
+  async getFollowers(@Param('id') id: number) {
     return this.relationshipService.getFollowers(id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('friends/:id')
   @States()
-  async getFriends(@Param('id') id: number, @CurrentUser('id') userId: number) {
+  async getFriends(@Param('id') id: number) {
     return this.relationshipService.getFriends(id);
   }
 }

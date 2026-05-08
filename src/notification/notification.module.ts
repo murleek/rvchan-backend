@@ -9,6 +9,7 @@ import { NotificationProcessor } from './notification.processor';
 import { WebsocketModule } from 'src/websocket/websocket.module';
 import { NotificationController } from './notification.controller';
 import { SessionsModule } from 'src/sessions/sessions.module';
+import { MediaModule } from 'src/media/media.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { SessionsModule } from 'src/sessions/sessions.module';
     }),
     forwardRef(() => WebsocketModule),
     forwardRef(() => SessionsModule),
+    MediaModule,
   ],
   controllers: [NotificationController],
   providers: [NotificationService, NotificationProcessor, NotificationListener],

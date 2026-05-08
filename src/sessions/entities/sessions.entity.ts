@@ -11,50 +11,50 @@ import {
 @Entity()
 export class SessionsEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column()
-  tokenHash: string;
+  tokenHash!: string;
 
   @Column()
-  expiresAt: Date;
+  expiresAt!: Date;
 
   @Column({ default: 'unknown' })
-  ip: string;
+  ip!: string;
 
   @Column({ default: 'unknown' })
-  userAgent: string;
+  userAgent!: string;
 
   @Column({ nullable: true })
-  browser: string;
+  browser!: string;
 
   @Column({ nullable: true })
-  browserVersion: string;
+  browserVersion!: string;
 
   @Column({ nullable: true })
-  deviceModel: string;
+  deviceModel!: string;
 
   @Column({ nullable: true })
-  deviceType: string;
+  deviceType!: string;
 
   @Column({ nullable: true })
-  deviceVendor: string;
+  deviceVendor!: string;
 
   @Column({ nullable: true })
-  os: string;
+  os!: string;
 
   @Column({ nullable: true })
-  osVersion: string;
+  osVersion!: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   @Column({ type: 'uuid', generated: 'uuid' })
-  deviceId: string;
+  deviceId!: string;
 
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  user: UserEntity;
+  user!: UserEntity;
 }

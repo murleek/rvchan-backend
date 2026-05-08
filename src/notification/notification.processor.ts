@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotificationEntity } from './entities/notification.entity';
 import { WebsocketGateway } from 'src/websocket/websocket.gateway';
-import { NotificationType } from './types/notification.types';
+import { Notification, NotificationType } from './types/notification.types';
 
 @Processor('notifications')
 export class NotificationProcessor extends WorkerHost {
@@ -16,7 +16,7 @@ export class NotificationProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<any>) {
+  async process(job: Job<Notification>) {
     try {
       const { type, recipientId, actorId, payload } = job.data;
 
@@ -34,16 +34,15 @@ export class NotificationProcessor extends WorkerHost {
         });
         notificationId = notification.id;
       } else {
-        const notification = await this.repo.save({
+        const saved = await this.repo.save({
           type,
           recipient: { id: recipientId },
           actor: actorId ? { id: actorId } : undefined,
           groupKey,
           count: 1,
           actors: actorId ? [actorId] : [],
-          payload,
         });
-        notificationId = notification.id;
+        notificationId = saved.id;
       }
 
       // const existing = await this.repo.findOne({
@@ -73,7 +72,11 @@ export class NotificationProcessor extends WorkerHost {
         relations: ['recipient', 'actor'],
       });
 
-      this.gateway.notifyNew({ notification });
+      if (!notification) {
+        throw new Error('Notification not found after saving');
+      }
+
+      await this.gateway.notifyNew({ notification });
     } catch (error) {
       console.error('Error processing notification job:', error);
       throw error; // Rethrow to let BullMQ handle retries
@@ -82,7 +85,7 @@ export class NotificationProcessor extends WorkerHost {
 
   private buildGroupKey(
     type: NotificationType,
-    recipientId: string,
+    recipientId: number,
     payload?: any,
   ) {
     switch (type) {
@@ -94,9 +97,6 @@ export class NotificationProcessor extends WorkerHost {
 
       case 'new_device':
         return `new_device:${recipientId}:${payload?.device.deviceId}`;
-
-      default:
-        return `${type}:${recipientId}`;
     }
   }
 

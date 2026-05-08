@@ -12,29 +12,32 @@ import {
 @Entity()
 export class MediaEntity extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   // @Column({ default: false })
   // uploaded: boolean = false;
 
   @Column()
-  url: string;
+  url!: string;
 
   @Column()
-  hash: string;
+  hash!: string;
 
   @Column()
-  originalName: string;
+  originalName!: string;
 
   @Column()
-  mimeType: string;
+  mimeType!: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
+
+  @Column()
+  path!: string;
 
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  user: UserEntity;
+  user!: UserEntity;
 }

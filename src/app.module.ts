@@ -68,9 +68,9 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     }),
     ScheduleModule.forRoot(),
     CacheModule.register({
-      ttl: 0,
+      ttl: 300,
       max: 1000,
-      useFactory: async () => {
+      useFactory: () => {
         return {
           stores: [
             new Keyv({
@@ -82,6 +82,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
           ],
         };
       },
+      // url: `redis://:${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST || '127.0.0.1'}:${Number(process.env.REDIS_PORT) || 6379}`,
     }),
     EventEmitterModule.forRoot(),
 

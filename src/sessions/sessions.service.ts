@@ -17,6 +17,7 @@ import { SessionsEntity } from 'src/sessions/entities/sessions.entity';
 import { UserEntity } from 'src/user/entities/user.entity';
 import { ParsedUserAgent } from 'src/common/interfaces/user-agent.interface';
 import { UserState } from 'src/user/types/user.types';
+import { JwtAccessPayload } from 'src/auth/types/jwt.types';
 
 @Injectable()
 export class SessionsService {
@@ -40,7 +41,7 @@ export class SessionsService {
     }
 
     try {
-      return await this.jwtService.verifyAsync(token);
+      return await this.jwtService.verifyAsync<JwtAccessPayload>(token);
     } catch {
       throw new UnauthorizedException('Invalid token');
     }

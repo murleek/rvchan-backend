@@ -75,12 +75,15 @@ export class RelationshipService {
     });
 
     if (await this.isFollowing(userBId, userAId)) {
-      this.notificationService.followAccepted(
+      await this.notificationService.followAccepted(
         userAId.toString(),
         userBId.toString(),
       );
     } else {
-      this.notificationService.follow(userAId.toString(), userBId.toString());
+      await this.notificationService.follow(
+        userAId.toString(),
+        userBId.toString(),
+      );
     }
 
     return { success: true };

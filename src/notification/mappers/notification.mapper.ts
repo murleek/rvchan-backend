@@ -1,6 +1,5 @@
 import { NotificationEntity } from '../entities/notification.entity';
 import { Notification } from '../dto/notification.dto';
-import { NotificationType } from '../types/notification.types';
 
 export class NotificationMapper {
   static toPublic(notification: NotificationEntity): Notification {
@@ -8,7 +7,7 @@ export class NotificationMapper {
       id: notification.id,
       createdAt: notification.createdAt,
       isRead: notification.isRead,
-      type: notification.type as NotificationType,
+      type: notification.type,
       groupKey: notification.groupKey,
       count: notification.count,
       payload: notification.payload,

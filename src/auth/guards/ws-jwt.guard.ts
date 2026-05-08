@@ -8,13 +8,14 @@ import {
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import Redis from 'ioredis';
+import { AUTH_REVOKED } from 'src/redis/redis.keys';
 
 import {
   AUTH_KEY,
   AuthorizeOptions,
   IncludeOrExclude,
 } from 'src/user/decorators/authorization.decorator';
-import { UserState } from 'src/user/types/user.types';
+import { ICurrentUser, UserState } from 'src/user/types/user.types';
 
 const RESTRICTED_STATES = [
   UserState.INIT,
@@ -49,14 +50,12 @@ export class WsJwtAuthGuard extends AuthGuard('jwt-access') {
       throw new UnauthorizedException();
     }
 
-    const user = client.data.user;
+    const user = client.data.user as ICurrentUser;
 
     const { deviceId, id, state } = user;
 
     // 🔐 проверка revoked устройства
-    const revoked = await this.redis.exists(
-      `auth:device:revoked:${id}:${deviceId}`,
-    );
+    const revoked = await this.redis.exists(AUTH_REVOKED(id, deviceId));
 
     if (revoked) {
       throw new UnauthorizedException('Device revoked');

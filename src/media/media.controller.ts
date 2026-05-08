@@ -1,24 +1,12 @@
-import {
-  Controller,
-  ForbiddenException,
-  Get,
-  Param,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
-import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { createZodDto, ZodResponse } from 'nestjs-zod';
+import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBody, ApiConsumes } from '@nestjs/swagger';
+import { createZodDto } from 'nestjs-zod';
 import { MediaService } from './media.service';
 import { R2Provider, SIZES } from './r2.provider';
 import z from 'zod';
-import { UserEntity } from 'src/user/entities/user.entity';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { States } from 'src/user/decorators/authorization.decorator';
 import { UserState } from 'src/user/types/user.types';
-import { ProvidedFile } from 'src/common/decorators/file.decorator';
-import type { MultipartFile } from '@fastify/multipart';
 import { UploadGuard } from 'src/common/guards/upload.guard';
 
 // ## upload flow
@@ -33,10 +21,7 @@ class GetUploadUrlDto extends createZodDto(GetUploadUrlSchema) {}
 
 @Controller('media')
 export class MediaController {
-  constructor(
-    private readonly mediaService: MediaService,
-    private readonly cf: R2Provider,
-  ) {}
+  constructor(private readonly cf: R2Provider) {}
 
   @Post('upload')
   @UseGuards(UploadGuard, JwtAuthGuard)

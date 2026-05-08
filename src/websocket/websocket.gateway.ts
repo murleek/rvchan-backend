@@ -12,12 +12,12 @@ import { WsJwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
 import { JwtAccessPayload } from 'src/auth/types/jwt.types';
 import { NotificationEntity } from 'src/notification/entities/notification.entity';
 import { NotificationService } from 'src/notification/notification.service';
+import { ONLINE_KEY } from 'src/redis/redis.keys';
 import { RedisService } from 'src/redis/redis.service';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { UserEntity } from 'src/user/entities/user.entity';
 import { UserService } from 'src/user/user.service';
 
-const ONLINE_KEY = (userId: number | string) => `online:user:${userId}`;
 const USER_CHANNEL = (userId: number | string) => `user:${userId}`;
 const ONLINE_TTL = 60;
 

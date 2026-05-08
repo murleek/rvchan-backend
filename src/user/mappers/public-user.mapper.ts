@@ -23,10 +23,7 @@ export class UserMapper {
       avatarUrl: user.avatarUrl,
       followers: user.followers || 0,
       following: user.following || 0,
-      lastActiveAt:
-        user.lastActiveAt.getTime() > Date.now() - 60 * 1000
-          ? 'now'
-          : user.lastActiveAt,
+      lastActiveAt: user.lastActiveAt,
     });
   }
 

@@ -15,6 +15,8 @@ import { RelationshipService } from 'src/relationship/relationship.service';
 import { MultipartFile } from '@fastify/multipart';
 import { PathType, R2Provider, SIZES } from 'src/media/r2.provider';
 import sharp from 'sharp';
+import { ONLINE_KEY } from 'src/redis/redis.keys';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class UserService {
@@ -23,6 +25,7 @@ export class UserService {
     private readonly usersRepo: Repository<UserEntity>,
 
     private readonly relationshipService: RelationshipService,
+    private readonly redisService: RedisService,
     private readonly cf: R2Provider,
   ) {}
 
@@ -52,6 +55,8 @@ export class UserService {
     } catch (e) {
       console.error('Error fetching avatar URL:', e);
     }
+
+    userPublic.lastActiveAt = await this.getOnlineStatus(user);
 
     return userPublic;
   }
@@ -344,5 +349,25 @@ export class UserService {
 
   async updateLastActive(id: number) {
     await this.usersRepo.update({ id }, { lastActiveAt: new Date() });
+  }
+
+  async getOnlineStatus(user: number | UserEntity) {
+    if (typeof user === 'number') {
+      const userDB = await this.usersRepo.findOne({ where: { id: user } });
+      if (!userDB) {
+        throw new NotFoundException('User not found');
+      }
+      user = userDB;
+    }
+
+    if (user.lastActiveAt.getTime() > Date.now() - 60 * 1000) {
+      return 'now';
+    }
+
+    if (await this.redisService.exists(ONLINE_KEY(user.id))) {
+      return 'now';
+    }
+
+    return user.lastActiveAt;
   }
 }

@@ -59,7 +59,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @States()
-  logout(@CurrentUser('deviceId') deviceId) {
+  logout(@CurrentUser('deviceId') deviceId: string) {
     return this.authService.logout(deviceId);
   }
 }

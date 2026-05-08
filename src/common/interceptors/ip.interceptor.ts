@@ -13,7 +13,9 @@ export class IpInterceptor implements NestInterceptor {
 
     request.clientIp =
       request.headers['cf-connecting-ip'] ||
-      request.headers['x-forwarded-for']?.split(',')[0] ||
+      (request.headers['x-forwarded-for'] as string | undefined)?.split(
+        ',',
+      )[0] ||
       request.headers['x-real-ip'] ||
       request.connection?.remoteAddress ||
       request.socket?.remoteAddress ||

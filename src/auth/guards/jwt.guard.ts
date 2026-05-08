@@ -15,6 +15,7 @@ import {
 } from 'src/user/decorators/authorization.decorator';
 import { UserState } from 'src/user/types/user.types';
 import { FastifyRequest } from 'fastify';
+import { AUTH_REVOKED } from 'src/redis/redis.keys';
 
 const RESTRICTED_STATES = [
   UserState.INIT,
@@ -38,9 +39,7 @@ export class JwtAuthGuard extends AuthGuard('jwt-access') {
 
     const { deviceId, id, state } = req.user;
 
-    const revoked = await this.redis.exists(
-      `auth:device:revoked:${id}:${deviceId}`,
-    );
+    const revoked = await this.redis.exists(AUTH_REVOKED(id, deviceId));
     if (revoked) {
       throw new UnauthorizedException('Device revoked');
     }

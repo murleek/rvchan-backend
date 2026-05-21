@@ -5,10 +5,14 @@ import {
   OneToMany,
   Index,
   CreateDateColumn,
+  OneToOne,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 
 import { UserState } from '../types/user.types';
 import { UserFollowsEntity } from 'src/relationship/entities/user-follows.entity';
+import { MediaEntity } from 'src/media/entities/media.entity';
 
 @Index('user_search_vector_idx', { synchronize: false })
 @Index('user_username_trgm_idx', { synchronize: false })
@@ -30,7 +34,7 @@ export class UserEntity {
   @Column({ nullable: true })
   description!: string;
 
-  @Column()
+  @Column({ select: false })
   password!: string;
 
   @Column({ unique: true, nullable: true })
@@ -52,7 +56,14 @@ export class UserEntity {
   search_vector?: string;
 
   @Column({ nullable: true })
-  avatarUrl!: string;
+  avatarId?: string;
+
+  @ManyToOne(() => MediaEntity, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'avatarId' })
+  avatar?: MediaEntity;
 
   @CreateDateColumn()
   createdAt!: Date;

@@ -4,6 +4,7 @@ export const NotificationType = {
   FOLLOW: 'follow',
   FOLLOW_ACCEPTED: 'follow_accepted',
   NEW_DEVICE: 'new_device',
+  POST_MENTION: 'post_mention',
 } as const;
 
 export type NotificationType =
@@ -27,8 +28,15 @@ export type NotificationNewDevice = {
   payload: { device: ParsedUserAgent; ip: string };
   actorId?: undefined;
 };
+export type NotificationPostMention = {
+  type: typeof NotificationType.POST_MENTION;
+  recipientId: number;
+  actorId: number;
+  payload: { postId: number; username: string };
+};
 
 export type Notification =
   | NotificationFollow
   | NotificationFollowAccepted
-  | NotificationNewDevice;
+  | NotificationNewDevice
+  | NotificationPostMention;

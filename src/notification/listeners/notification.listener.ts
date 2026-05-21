@@ -19,7 +19,7 @@ export class NotificationListener {
 
   @OnEvent('session.new_device')
   handleDevice(data: {
-    userId: string;
+    userId: number;
     device: ParsedUserAgent;
     deviceId: string;
     ip: string;

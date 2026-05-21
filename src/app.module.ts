@@ -29,6 +29,9 @@ import KeyvRedis, { Keyv } from '@keyv/redis';
 import { CacheableMemory } from 'cacheable';
 import { WebsocketModule } from './websocket/websocket.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { PostModule } from './post/post.module';
+import { LikeModule } from './reaction/reaction.module';
+import { PaginationModule } from './pagination/pagination.module';
 
 @Module({
   imports: [
@@ -94,6 +97,9 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     RelationshipModule,
     MediaModule,
     WebsocketModule,
+    PostModule,
+    LikeModule,
+    PaginationModule,
   ],
   controllers: [AppController],
   providers: [

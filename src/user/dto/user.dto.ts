@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 import { UserState } from '../types/user.types';
-import { SIZES } from 'src/media/r2.provider';
 
 const UsernameObject = z.string().min(3).max(32);
 
@@ -17,11 +16,7 @@ export const UserSchema = z.object({
   description: z.string().max(256).optional().nullable(),
   followers: z.number().optional(),
   following: z.number().optional(),
-  avatarUrl: z
-    .string()
-    .or(z.record(z.number(), z.string()))
-    .optional()
-    .nullable(),
+  avatar: z.string().or(z.record(z.number(), z.string())).optional().nullable(),
   lastActiveAt: z.date().or(z.literal('now')).optional(),
 });
 
@@ -34,6 +29,7 @@ export const InitUserSchema = z.object({
 
 export const PublicUserSchema = UserSchema.omit({
   password: true,
+  email: true,
 }).extend({
   isFollowing: z.boolean().optional(),
   isFollowed: z.boolean().optional(),
@@ -44,7 +40,7 @@ export const ShortPublicUserSchema = PublicUserSchema.pick({
   username: true,
   firstName: true,
   lastName: true,
-  avatarUrl: true,
+  avatar: true,
 });
 
 export const CreateUserSchema = UserSchema.pick({

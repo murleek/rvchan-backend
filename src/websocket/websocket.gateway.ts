@@ -12,10 +12,12 @@ import { WsJwtAuthGuard } from 'src/auth/guards/ws-jwt.guard';
 import { JwtAccessPayload } from 'src/auth/types/jwt.types';
 import { NotificationEntity } from 'src/notification/entities/notification.entity';
 import { NotificationService } from 'src/notification/notification.service';
+import { PublicPost } from 'src/post/dto/post.dto';
 import { ONLINE_KEY } from 'src/redis/redis.keys';
 import { RedisService } from 'src/redis/redis.service';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { UserEntity } from 'src/user/entities/user.entity';
+import { ICurrentUser } from 'src/user/types/user.types';
 import { UserService } from 'src/user/user.service';
 
 const USER_CHANNEL = (userId: number | string) => `user:${userId}`;
@@ -65,7 +67,7 @@ export class WebsocketGateway
       );
 
       // Отправляем счётчик только этому сокету (конкретному девайсу)
-      this.updateCountersToSocket(client.id, { unseen });
+      this.sendToSocket(client.id, 'notification:counters', { unseen });
     } catch {
       client.disconnect();
     }
@@ -89,9 +91,8 @@ export class WebsocketGateway
     this.server.to(USER_CHANNEL(userId)).emit(event, data);
   }
 
-  // Отправка конкретному сокету по socketId
-  updateCountersToSocket(socketId: string, counters: any) {
-    this.server.to(socketId).emit('notification:counters', counters);
+  sendToSocket(socketId: string, event: string, counters: any) {
+    this.server.to(socketId).emit(event, counters);
   }
 
   // Broadcast счётчика всем сокетам юзера
@@ -111,7 +112,6 @@ export class WebsocketGateway
     }
   }
 
-  // При новом уведомлении каждому сокету юзера отправляем свой счётчик
   async notifyNew({ notification }: { notification: NotificationEntity }) {
     try {
       const userId = notification.recipient.id;
@@ -139,6 +139,26 @@ export class WebsocketGateway
     }
   }
 
+  postCreated(
+    post: PublicPost & { parent?: { id: number; username: string } },
+    user: ICurrentUser,
+    jobId?: string,
+  ) {
+    // const sockets = await this.server.in(USER_CHANNEL(user.id)).fetchSockets();
+
+    // for (const socket of sockets) {
+    //   this.sendToSocket(socket.id, 'post:created', {
+    //     id: post.id,
+    //     content: post.content,
+    //     parentId: post.parentId,
+    //     imageUrl: post.imageUrl,
+    //     createdAt: post.createdAt,
+    //   });
+    // }
+
+    this.sendToUser(user.id, 'post:created', { post, jobId });
+  }
+
   async notifyUpdate(notification: NotificationEntity) {
     this.sendToUser(
       notification.recipient.id,
@@ -162,7 +182,7 @@ export class WebsocketGateway
     await this.notificationService.markAllAsSeen(userId, deviceId);
 
     // Сбрасываем только этому девайсу
-    this.updateCountersToSocket(client.id, { unseen: 0 });
+    this.sendToSocket(client.id, 'notification:counters', { unseen: 0 });
 
     return { ok: true };
   }
@@ -183,6 +203,8 @@ export class WebsocketGateway
     const { id: userId, deviceId }: { id: number; deviceId: string } =
       client.data.user;
 
+    console.log('Received ping from user', userId, 'device', deviceId);
+
     await this.userService.updateLastActive(userId);
     await this.redisService.expire(ONLINE_KEY(userId), ONLINE_TTL);
 
@@ -191,7 +213,7 @@ export class WebsocketGateway
       userId,
       deviceId,
     );
-    this.updateCountersToSocket(client.id, { unseen });
+    this.sendToSocket(client.id, 'notification:counters', { unseen });
 
     return { event: 'pong' };
   }

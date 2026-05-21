@@ -1,5 +1,6 @@
 import { NotificationEntity } from '../entities/notification.entity';
 import { Notification } from '../dto/notification.dto';
+import { ShortPublicUserSchema } from 'src/user/dto/user.dto';
 
 export class NotificationMapper {
   static toPublic(notification: NotificationEntity): Notification {
@@ -12,21 +13,15 @@ export class NotificationMapper {
       count: notification.count,
       payload: notification.payload,
       actor: notification.actor
-        ? {
-            id: notification.actor?.id,
-            firstName: notification.actor?.firstName,
-            lastName: notification.actor?.lastName,
-            username: notification.actor?.username,
-            avatarUrl: notification.actor?.avatarUrl,
-          }
+        ? ShortPublicUserSchema.parse(notification.actor)
         : undefined,
-      recipient: {
+      recipient: ShortPublicUserSchema.parse({
         id: notification.recipient.id,
+        username: notification.recipient.username,
         firstName: notification.recipient.firstName,
         lastName: notification.recipient.lastName,
-        username: notification.recipient.username,
-        avatarUrl: notification.recipient.avatarUrl,
-      },
+        avatar: notification.recipient.avatar,
+      }),
     };
   }
 }

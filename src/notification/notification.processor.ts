@@ -41,6 +41,7 @@ export class NotificationProcessor extends WorkerHost {
           groupKey,
           count: 1,
           actors: actorId ? [actorId] : [],
+          payload,
         });
         notificationId = saved.id;
       }
@@ -97,6 +98,9 @@ export class NotificationProcessor extends WorkerHost {
 
       case 'new_device':
         return `new_device:${recipientId}:${payload?.device.deviceId}`;
+
+      case 'post_mention':
+        return `post_mention:${recipientId}:${payload?.username}:${payload?.postId}`;
     }
   }
 

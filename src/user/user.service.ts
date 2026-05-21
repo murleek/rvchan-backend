@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { FindOneOptions, ILike, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { UserEntity } from './entities/user.entity';
@@ -30,7 +30,7 @@ export class UserService {
   ) {}
 
   async validate(email: string, password: string): Promise<UserEntity> {
-    const user = await this.findByEmail(email);
+    const user = await this.findByEmail(email, { select: ['id', 'password'] });
 
     if (!user) {
       throw new UnauthorizedException('invalid_credentials');
@@ -49,8 +49,8 @@ export class UserService {
     const userPublic = UserMapper.toPublic(user);
 
     try {
-      if (user.avatarUrl) {
-        userPublic.avatarUrl = await this.cf.getAllDownloadUrl(user.avatarUrl);
+      if (user.avatarId) {
+        userPublic.avatar = await this.cf.getAllDownloadUrl(user.avatarId);
       }
     } catch (e) {
       console.error('Error fetching avatar URL:', e);
@@ -65,8 +65,8 @@ export class UserService {
     const userPublic = UserMapper.toShortPublic(user);
 
     try {
-      if (user.avatarUrl) {
-        userPublic.avatarUrl = await this.cf.getAllDownloadUrl(user.avatarUrl);
+      if (user.avatarId) {
+        userPublic.avatar = await this.cf.getAllDownloadUrl(user.avatarId);
       }
     } catch (e) {
       console.error('Error fetching avatar URL:', e);
@@ -134,7 +134,7 @@ export class UserService {
   //     throw new BadRequestException('File not found');
   //   }
 
-  //   user.avatarUrl = fileId;
+  //   user.avatar = fileId;
   //   await this.usersRepo.save(user);
 
   //   return await this.getPublicUser(user);
@@ -150,8 +150,11 @@ export class UserService {
     return await this.getPublicUser(userFromDb);
   }
 
-  async findByEmail(email: string) {
-    return this.usersRepo.findOne({ where: { email } });
+  async findByEmail(
+    email: string,
+    options: Omit<FindOneOptions<UserEntity>, 'where'> = {},
+  ) {
+    return this.usersRepo.findOne({ where: { email }, ...options });
   }
 
   async findById(id: number) {
@@ -296,7 +299,7 @@ export class UserService {
       )
       .orderBy('rank', 'DESC')
       .setParameters({ search, tsQuery })
-      .limit(20)
+      .limit(8)
       .getRawAndEntities();
 
     return Promise.all(
@@ -342,7 +345,7 @@ export class UserService {
       PathType.AVATAR,
     );
 
-    await this.usersRepo.save({ ...currentUser, avatarUrl: file.id });
+    await this.usersRepo.save({ ...currentUser, avatarId: file.id });
 
     return { ok: true };
   }

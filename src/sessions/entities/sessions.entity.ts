@@ -13,6 +13,9 @@ export class SessionsEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Column({ generated: 'increment', unique: true })
+  internalId!: number;
+
   @Column()
   tokenHash!: string;
 

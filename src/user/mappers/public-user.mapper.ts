@@ -1,3 +1,4 @@
+import { MediaEntity } from 'src/media/entities/media.entity';
 import {
   PublicUser,
   PublicUserSchema,
@@ -7,20 +8,19 @@ import { UserEntity } from '../entities/user.entity';
 
 export class UserMapper {
   static toPublic(
-    user: Omit<UserEntity, 'avatarUrl'> & {
-      avatarUrl: string | Record<number, string>;
+    user: Omit<UserEntity, 'avatar'> & {
+      avatar?: MediaEntity | string | Record<number, string>;
     },
   ): PublicUser {
     return PublicUserSchema.parse({
       id: user.id,
-      email: user.email,
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
       description: user.description,
       isPrivate: user.isPrivate,
       state: user.state,
-      avatarUrl: user.avatarUrl,
+      avatarId: user.avatarId,
       followers: user.followers || 0,
       following: user.following || 0,
       lastActiveAt: user.lastActiveAt,
@@ -33,7 +33,7 @@ export class UserMapper {
       username: user.username,
       firstName: user.firstName,
       lastName: user.lastName,
-      avatarUrl: user.avatarUrl,
+      avatarId: user.avatarId,
     });
   }
 }

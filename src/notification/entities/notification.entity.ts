@@ -17,6 +17,9 @@ export class NotificationEntity extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Column({ generated: 'increment', unique: true })
+  internalId!: number;
+
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'recipient_id' })
   recipient!: UserEntity;

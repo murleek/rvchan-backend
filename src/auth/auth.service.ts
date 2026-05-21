@@ -3,6 +3,7 @@ import { UserService } from 'src/user/user.service';
 import { SessionsService } from 'src/sessions/sessions.service';
 import { ParsedUserAgent } from 'src/common/interfaces/user-agent.interface';
 import { NotificationService } from 'src/notification/notification.service';
+import { JwtAccessPayload } from './types/jwt.types';
 
 @Injectable()
 export class AuthService {
@@ -31,7 +32,7 @@ export class AuthService {
     );
 
     await this.notificationService.newDevice(
-      user.id.toString(),
+      user.id,
       { ...userAgent, deviceId },
       ip,
     );
@@ -40,11 +41,11 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string, ip: string, userAgent: ParsedUserAgent) {
-    let payload: any;
+    let payload: JwtAccessPayload;
 
     try {
       payload = await this.sessionsService.verify(refreshToken);
-    } catch (e) {
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
 

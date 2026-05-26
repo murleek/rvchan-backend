@@ -10,7 +10,6 @@ import {
   Tree,
   TreeParent,
   TreeChildren,
-  BaseEntity,
 } from 'typeorm';
 import { UserEntity } from 'src/user/entities/user.entity';
 import { ReactionEntity } from 'src/reaction/entities/reaction.entity';

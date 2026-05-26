@@ -40,6 +40,7 @@ export const PostSchema = z.object({
   replyCount: z.number(),
   likeCount: z.number(),
   createdAt: z.date(),
+  isLiked: z.boolean(),
   entities: z
     .array(z.union([MentionEntitySchema, LinkEntitySchema]))
     .nullable(),

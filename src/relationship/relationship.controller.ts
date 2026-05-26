@@ -1,9 +1,18 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { States } from 'src/user/decorators/authorization.decorator';
 import { RelationshipService } from './relationship.service';
 import { FollowDto } from './dto/relationship.dto';
+import { CursorPaginationDto } from 'src/pagination/dto/cursor-pagination.dto';
 
 @Controller('relationship')
 export class RelationshipController {
@@ -50,23 +59,32 @@ export class RelationshipController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('following/:id')
+  @Get('following/:username')
   @States()
-  async getFollowing(@Param('id') id: number) {
-    return this.relationshipService.getFollowing(id);
+  async getFollowing(
+    @Param('username') username: string,
+    @Query() dto?: CursorPaginationDto,
+  ) {
+    return this.relationshipService.getFollowing(username, dto);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('followers/:id')
+  @Get('followers/:username')
   @States()
-  async getFollowers(@Param('id') id: number) {
-    return this.relationshipService.getFollowers(id);
+  async getFollowers(
+    @Param('username') username: string,
+    @Query() dto?: CursorPaginationDto,
+  ) {
+    return this.relationshipService.getFollowers(username, dto);
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('friends/:id')
+  @Get('friends/:username')
   @States()
-  async getFriends(@Param('id') id: number) {
-    return this.relationshipService.getFriends(id);
+  async getFriends(
+    @Param('username') username: string,
+    @Query() dto?: CursorPaginationDto,
+  ) {
+    return this.relationshipService.getFriends(username, dto);
   }
 }

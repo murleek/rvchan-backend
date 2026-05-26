@@ -5,6 +5,8 @@ export const NotificationType = {
   FOLLOW_ACCEPTED: 'follow_accepted',
   NEW_DEVICE: 'new_device',
   POST_MENTION: 'post_mention',
+  POST_REPLY: 'post_reply',
+  POST_REPLY_TO_OTHER: 'post_reply_to_other',
 } as const;
 
 export type NotificationType =

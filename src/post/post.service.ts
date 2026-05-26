@@ -16,6 +16,7 @@ import { PublicPost, PublicThread } from './dto/post.dto';
 import { UserService } from 'src/user/user.service';
 import { TextEntity } from './types/post.types';
 import { CursorPaginated } from 'src/pagination/interfaces/cursor-pagination.interface';
+import { ReactionService } from 'src/reaction/reaction.service';
 
 @Injectable()
 export class PostService {
@@ -26,6 +27,7 @@ export class PostService {
     private postingQueue: Queue,
     private readonly pagination: PaginationService,
     private readonly user: UserService,
+    private readonly reaction: ReactionService,
   ) {}
 
   LINK_REGEX = /\bhttps?:\/\/[^\s<]+[^\s<.,:;"')\]}]/gi;
@@ -62,6 +64,34 @@ export class PostService {
     }
 
     return entities.sort((a, b) => a.from - b.from);
+  }
+
+  sortByHierarchy(items: PostEntity[]): PostEntity[] {
+    const childrenMap = new Map<number | null, PostEntity[]>();
+    const result: PostEntity[] = [];
+
+    for (const item of items) {
+      const key = item.parentId ?? null;
+
+      if (!childrenMap.has(key)) {
+        childrenMap.set(key, []);
+      }
+
+      childrenMap.get(key)!.push(item);
+    }
+
+    function traverse(parentId: number | null = null) {
+      const children = childrenMap.get(parentId) || [];
+
+      for (const child of children) {
+        result.push(child);
+        traverse(child.id);
+      }
+    }
+
+    traverse();
+
+    return result;
   }
 
   async createPost(
@@ -124,27 +154,39 @@ export class PostService {
     return { ok: true };
   }
 
-  async getPublicPost(post: PostEntity): Promise<PublicPost> {
+  async getPublicPost(
+    post: PostEntity,
+    getterUser: ICurrentUser,
+  ): Promise<PublicPost> {
     const publicPost = PostMapper.toPublicPost(post);
     const user = await this.user.getShortPublicUser(post.user);
+    const isLiked =
+      getterUser &&
+      !!(await this.reaction.isLikedByUser(post.id, getterUser.id));
 
-    return { ...publicPost, user };
+    return { ...publicPost, user, isLiked };
   }
 
   async getPublicThread(
     post: PostEntity,
     parents: PostEntity[],
     replies: CursorPaginated<PublicPost>,
+    getterUser: ICurrentUser,
   ): Promise<PublicThread> {
     const publicThread = PostMapper.toPublicThread(post);
     const user = await this.user.getShortPublicUser(post.user);
-    console.log(parents);
+    const isLiked =
+      getterUser &&
+      !!(await this.reaction.isLikedByUser(post.id, getterUser.id));
 
     return {
       ...publicThread,
       user,
+      isLiked,
       replies,
-      parents: parents.map((p) => PostMapper.toPublicPost(p)),
+      parents: await Promise.all(
+        parents.map(async (p) => await this.getPublicPost(p, getterUser)),
+      ),
     };
   }
 
@@ -157,7 +199,12 @@ export class PostService {
     return { ok: true };
   }
 
-  async getThread(postId: number, username: string) {
+  async getThread(
+    postId: number,
+    username: string,
+    user: ICurrentUser,
+    dto?: CursorPaginationDto,
+  ) {
     if (!username) {
       throw new NotFoundException('Thread not found');
     }
@@ -170,17 +217,22 @@ export class PostService {
 
     if (!thread) throw new NotFoundException('Thread not found');
 
-    const parents = (await this.postRepo.findAncestors(thread)).filter(
-      (p) => p.id !== thread.id,
-    );
+    const parents = this.sortByHierarchy(
+      await this.postRepo.findAncestors(thread, {
+        relations: ['user'],
+      }),
+    )
+      .slice(0, -1)
+      .reverse();
 
-    const replies = await this.getReplies(thread.id);
+    const replies = await this.getReplies(thread.id, user, dto);
 
-    return await this.getPublicThread(thread, parents, replies);
+    return await this.getPublicThread(thread, parents, replies, user);
   }
 
   async getReplies(
     parentId: number,
+    user: ICurrentUser,
     dto?: CursorPaginationDto,
   ): Promise<CursorPaginated<PublicPost>> {
     return (await this.pagination.paginate<PostEntity, PublicPost>(
@@ -198,12 +250,16 @@ export class PostService {
         type: 'cursor',
         cursorField: 'id',
         order: 'DESC',
-        map: async (post) => await this.getPublicPost(post),
+        map: async (post) => await this.getPublicPost(post, user),
       },
     )) as CursorPaginated<PublicPost>;
   }
 
-  async getUserThreads(username: string, dto?: CursorPaginationDto) {
+  async getUserThreads(
+    username: string,
+    user: ICurrentUser,
+    dto?: CursorPaginationDto,
+  ) {
     return await this.pagination.paginate<PostEntity, PublicPost>(
       this.postRepo
         .createQueryBuilder('entity')
@@ -220,7 +276,7 @@ export class PostService {
         type: 'cursor',
         cursorField: 'id',
         order: 'DESC',
-        map: async (post) => await this.getPublicPost(post),
+        map: async (post) => await this.getPublicPost(post, user),
       },
     );
 

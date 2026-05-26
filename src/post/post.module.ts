@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostController } from './post.controller';
 import { PostingProcessor } from './queue/post.queue';
@@ -8,7 +8,7 @@ import { PostEntity } from './entities/post.entity';
 import { WebsocketModule } from 'src/websocket/websocket.module';
 import { PaginationModule } from 'src/pagination/pagination.module';
 import { UserModule } from 'src/user/user.module';
-import { NotificationModule } from 'src/notification/notification.module';
+import { ReactionModule } from 'src/reaction/reaction.module';
 
 @Module({
   imports: [
@@ -18,8 +18,8 @@ import { NotificationModule } from 'src/notification/notification.module';
     }),
     WebsocketModule,
     PaginationModule,
-    NotificationModule,
     UserModule,
+    forwardRef(() => ReactionModule),
   ],
   providers: [PostService, PostingProcessor],
   controllers: [PostController],

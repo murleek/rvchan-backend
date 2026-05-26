@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { UserService } from './user.service';
@@ -10,8 +10,8 @@ import { MediaModule } from 'src/media/media.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity]),
+    forwardRef(() => RelationshipModule),
     SessionsModule,
-    RelationshipModule,
     MediaModule,
   ],
   providers: [UserService],

@@ -30,4 +30,35 @@ export class NotificationListener {
       data.ip,
     );
   }
+
+  @OnEvent('post.mentioned')
+  handleMention(data: {
+    actorId: number;
+    targetId: number;
+    payload: { postId: number; username: string };
+  }) {
+    return this.service.mentioned(data.actorId, data.targetId, data.payload);
+  }
+
+  @OnEvent('post.replied')
+  handleReply(data: {
+    actorId: number;
+    targetId: number;
+    payload: { postId: number; username: string };
+  }) {
+    return this.service.replied(data.actorId, data.targetId, data.payload);
+  }
+
+  @OnEvent('post.replied_to_other')
+  handleReplyToOther(data: {
+    actorId: number;
+    targetId: number;
+    payload: { postId: number; username: string };
+  }) {
+    return this.service.repliedToOther(
+      data.actorId,
+      data.targetId,
+      data.payload,
+    );
+  }
 }

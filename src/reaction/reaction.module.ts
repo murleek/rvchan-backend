@@ -1,7 +1,18 @@
-import { Module } from '@nestjs/common';
-import { LikeService } from './reaction.service';
+import { forwardRef, Module } from '@nestjs/common';
+import { ReactionService } from './reaction.service';
+import { ReactionController } from './reaction.controller';
+import { PostModule } from 'src/post/post.module';
+import { ReactionEntity } from './entities/reaction.entity';
+import { PostEntity } from 'src/post/entities/post.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
-  providers: [LikeService],
+  providers: [ReactionService],
+  controllers: [ReactionController],
+  imports: [
+    TypeOrmModule.forFeature([ReactionEntity, PostEntity]),
+    forwardRef(() => PostModule),
+  ],
+  exports: [ReactionService],
 })
-export class LikeModule {}
+export class ReactionModule {}

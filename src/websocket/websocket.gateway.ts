@@ -203,8 +203,6 @@ export class WebsocketGateway
     const { id: userId, deviceId }: { id: number; deviceId: string } =
       client.data.user;
 
-    console.log('Received ping from user', userId, 'device', deviceId);
-
     await this.userService.updateLastActive(userId);
     await this.redisService.expire(ONLINE_KEY(userId), ONLINE_TTL);
 

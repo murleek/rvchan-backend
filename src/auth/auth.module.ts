@@ -12,7 +12,6 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { SessionsEntity } from '../sessions/entities/sessions.entity';
 
 import { UserEntity } from 'src/user/entities/user.entity';
-import { NotificationModule } from 'src/notification/notification.module';
 import { SessionsModule } from 'src/sessions/sessions.module';
 
 @Module({
@@ -20,7 +19,6 @@ import { SessionsModule } from 'src/sessions/sessions.module';
     TypeOrmModule.forFeature([SessionsEntity, UserEntity]),
     UserModule,
     PassportModule,
-    NotificationModule,
     SessionsModule,
   ],
   controllers: [AuthController],

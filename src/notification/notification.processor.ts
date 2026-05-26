@@ -101,6 +101,12 @@ export class NotificationProcessor extends WorkerHost {
 
       case 'post_mention':
         return `post_mention:${recipientId}:${payload?.username}:${payload?.postId}`;
+
+      case 'post_reply':
+        return `post_reply:${recipientId}:${payload?.username}:${payload?.postId}`;
+
+      case 'post_reply_to_other':
+        return `post_reply_to_other:${recipientId}:${payload?.username}:${payload?.postId}`;
     }
   }
 

@@ -1,3 +1,4 @@
+import { is } from 'zod/v4/locales';
 import {
   PostSchema,
   ThreadSchema,
@@ -17,6 +18,7 @@ export class PostMapper {
       likeCount: post.likeCount,
       createdAt: post.createdAt,
       entities: post.entities,
+      isLiked: false,
     });
   }
   static toPublicThread(post: PostEntity): PublicThread {
@@ -30,6 +32,7 @@ export class PostMapper {
       entities: post.entities,
       parent: post.parent ? this.toPublicThread(post.parent) : null,
       replies: post.replies,
+      isLiked: false,
     });
   }
 }

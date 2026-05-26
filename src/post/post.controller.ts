@@ -57,18 +57,23 @@ export class PostController {
   // }
 
   @Get(':username/threads')
+  @UseGuards(JwtAuthGuard)
   async getUserThreads(
     @Param('username') username: string,
     @Query() dto: CursorPaginationDto,
+    @CurrentUser() user: ICurrentUser,
   ) {
-    return this.postService.getUserThreads(username, dto);
+    return this.postService.getUserThreads(username, user, dto);
   }
 
   @Get(':username/threads/:threadId')
+  @UseGuards(JwtAuthGuard)
   async getThread(
     @Param('username') username: string,
     @Param('threadId') threadId: number,
+    @Query() dto: CursorPaginationDto,
+    @CurrentUser() user: ICurrentUser,
   ) {
-    return this.postService.getThread(threadId, username);
+    return this.postService.getThread(threadId, username, user, dto);
   }
 }

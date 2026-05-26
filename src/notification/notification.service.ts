@@ -48,13 +48,39 @@ export class NotificationService {
   async mentioned(
     actorId: number,
     targetId: number,
-    post: { id: number; username: string },
+    payload: { postId: number; username: string },
   ) {
     await this.queue.add('notify', {
       type: NotificationType.POST_MENTION,
       recipientId: targetId,
       actorId,
-      payload: { postId: post.id, username: post.username },
+      payload,
+    });
+  }
+
+  async replied(
+    actorId: number,
+    targetId: number,
+    payload: { postId: number; username: string },
+  ) {
+    await this.queue.add('notify', {
+      type: NotificationType.POST_REPLY,
+      recipientId: targetId,
+      actorId,
+      payload,
+    });
+  }
+
+  async repliedToOther(
+    actorId: number,
+    targetId: number,
+    payload: { postId: number; username: string },
+  ) {
+    await this.queue.add('notify', {
+      type: NotificationType.POST_REPLY_TO_OTHER,
+      recipientId: targetId,
+      actorId,
+      payload,
     });
   }
 

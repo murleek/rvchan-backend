@@ -30,7 +30,7 @@ import { CacheableMemory } from 'cacheable';
 import { WebsocketModule } from './websocket/websocket.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PostModule } from './post/post.module';
-import { LikeModule } from './reaction/reaction.module';
+import { ReactionModule } from './reaction/reaction.module';
 import { PaginationModule } from './pagination/pagination.module';
 
 @Module({
@@ -98,7 +98,7 @@ import { PaginationModule } from './pagination/pagination.module';
     MediaModule,
     WebsocketModule,
     PostModule,
-    LikeModule,
+    ReactionModule,
     PaginationModule,
   ],
   controllers: [AppController],

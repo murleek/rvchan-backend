@@ -18,6 +18,17 @@ import sharp from 'sharp';
 import { ONLINE_KEY } from 'src/redis/redis.keys';
 import { RedisService } from 'src/redis/redis.service';
 
+const RESERVED_USERNAMES = [
+  'login',
+  'register',
+  'init',
+  'logout',
+  'home',
+  'notifications',
+  'search',
+  'settings',
+];
+
 @Injectable()
 export class UserService {
   constructor(
@@ -225,6 +236,10 @@ export class UserService {
 
     if (/(\.|_){2}/.test(username)) {
       return 'consecutiveDotsUnderscores';
+    }
+
+    if (RESERVED_USERNAMES.includes(username.toLowerCase())) {
+      return 'invalidUsername';
     }
 
     return null;

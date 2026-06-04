@@ -17,7 +17,7 @@ interface PaginateOptions<T, U> {
 }
 
 interface CursorOptions<T, U> extends PaginateOptions<T, U> {
-  cursorField?: keyof T & string;
+  cursorField?: string;
   type?: 'cursor';
   findOptions?: never;
 }
@@ -30,11 +30,11 @@ interface OffsetOptions<T, U> extends PaginateOptions<T, U> {
 
 @Injectable()
 export class PaginationService {
-  private encodeCursor(value: string | number): string {
+  encodeCursor(value: string | number): string {
     return Buffer.from(String(value)).toString('base64url');
   }
 
-  private decodeCursor(cursor: string): string {
+  decodeCursor(cursor: string): string {
     return Buffer.from(cursor, 'base64url').toString('utf8');
   }
 

@@ -17,6 +17,7 @@ import { UserService } from 'src/user/user.service';
 import { TextEntity } from './types/post.types';
 import { CursorPaginated } from 'src/pagination/interfaces/cursor-pagination.interface';
 import { ReactionService } from 'src/reaction/reaction.service';
+import { UserFollowsEntity } from 'src/relationship/entities/user-follows.entity';
 
 @Injectable()
 export class PostService {
@@ -287,5 +288,104 @@ export class PostService {
     //     order: { createdAt: 'ASC' },
     //   })
     // ).map((p) => PostMapper.toPublicPost(p));
+  }
+
+  private buildScoreSql(alias = 'entity', followAlias = 'f') {
+    return `
+    (
+      CASE WHEN ${followAlias}.id IS NOT NULL THEN 5 ELSE 0 END +
+      ${alias}.likeCount * 0.3 +
+      ${alias}.replyCount * 0.5 +
+      EXTRACT(EPOCH FROM (NOW() - ${alias}.createdAt)) * -0.0001
+    )
+  `;
+  }
+  async getFeed(user: ICurrentUser, params?: CursorPaginationDto) {
+    const { limit, before, after } = params || { limit: 20 };
+    const scoreSql = this.buildScoreSql('entity', 'f');
+    const qb = this.postRepo
+      .createQueryBuilder('entity')
+      .leftJoinAndSelect('entity.user', 'user')
+      .leftJoin(
+        UserFollowsEntity,
+        'f',
+        'f.followingId = entity.userId AND f.followerId = :userId',
+        { userId: user.id },
+      )
+      .where('entity.parentId IS NULL')
+      .andWhere('entity.isDeleted = FALSE')
+      .andWhere('user.isPrivate = FALSE OR f.id IS NOT NULL')
+      .andWhere('entity.type = :type', { type: 'thread' })
+      .addSelect(scoreSql, 'score');
+
+    const take = limit + 1;
+
+    if (before) {
+      const decodedCursor = JSON.parse(this.pagination.decodeCursor(before));
+      console.log('Decoded cursor:', decodedCursor);
+      qb.andWhere('(score < :score OR (score = :score AND id < :id))', {
+        score: decodedCursor.score,
+        id: decodedCursor.id,
+      });
+    } else if (after) {
+      const decodedCursor = Buffer.from(after, 'base64url').toString('utf8');
+      console.log('Decoded cursor from after:', after, 'to', decodedCursor);
+      qb.andWhere(`${scoreSql} > :cursorValue`, {
+        cursorValue: decodedCursor,
+      });
+    }
+
+    qb.orderBy('score', 'DESC').addOrderBy('entity.id', 'DESC');
+
+    const { raw, entities } = await qb.take(take).getRawAndEntities();
+
+    const hasNextPage = entities.length > limit;
+    const hasPrevPage = entities.length < limit;
+    if (hasNextPage) entities.pop();
+
+    const nextCursor =
+      hasNextPage &&
+      raw[raw.length - 1]?.score != null &&
+      raw[raw.length - 1]?.id != null
+        ? this.pagination.encodeCursor(
+            JSON.stringify({
+              score: raw[raw.length - 1].score,
+              id: raw[raw.length - 1].id,
+            }),
+          )
+        : null;
+
+    const prevCursor =
+      hasPrevPage && raw.length > 0
+        ? this.pagination.encodeCursor(String(raw[0]['score']))
+        : null;
+
+    const mappedData = await Promise.all(
+      entities.map(async (post) => ({
+        ...(await this.getPublicPost(post, user)),
+        score: post['score'],
+      })),
+    );
+
+    return {
+      data: mappedData,
+      meta: {
+        nextCursor,
+        prevCursor,
+        hasNextPage,
+        hasPrevPage: !!before,
+        limit,
+      },
+    };
+
+    return await this.pagination.cursorPaginateQueryBuilder<
+      PostEntity,
+      PublicPost
+    >(qb, params, {
+      type: 'cursor',
+      cursorField: 'score',
+      order: 'DESC',
+      map: async (post) => await this.getPublicPost(post, user),
+    });
   }
 }

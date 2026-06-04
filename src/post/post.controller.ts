@@ -76,4 +76,13 @@ export class PostController {
   ) {
     return this.postService.getThread(threadId, username, user, dto);
   }
+
+  @Get('feed')
+  @UseGuards(JwtAuthGuard)
+  async getFeed(
+    @Query() dto: CursorPaginationDto,
+    @CurrentUser() user: ICurrentUser,
+  ) {
+    return this.postService.getFeed(user, dto);
+  }
 }

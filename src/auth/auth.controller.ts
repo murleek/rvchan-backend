@@ -1,11 +1,10 @@
-import { Controller, Post, Body, Req, UseGuards, Ip } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Ip } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthDto, RefreshAuthDto } from './dto/auth.dto';
+import { AuthDto, RefreshAuthDto, VerifyEmailDto } from './dto/auth.dto';
 import { CreateUserDto } from 'src/user/dto/user.dto';
 import { JwtAuthGuard } from './guards/jwt.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { States } from 'src/user/decorators/authorization.decorator';
-import { type FastifyRequest } from 'fastify';
 import { UserAgent } from 'src/common/decorators/user-agent.decorator';
 import type { ParsedUserAgent } from 'src/common/interfaces/user-agent.interface';
 import { Throttle } from '@nestjs/throttler';
@@ -14,13 +13,22 @@ import { Throttle } from '@nestjs/throttler';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // @Throttle({
+  //   default: { ttl: 120000, limit: 1 },
+  // })
+  @Post('verify')
+  @States()
+  async verify(@Body() dto: CreateUserDto) {
+    return await this.authService.sendOtpCode(dto.email, dto.password);
+  }
+
   @Throttle({
     default: { ttl: 60000, limit: 2 },
   })
   @Post('register')
   @States()
-  register(@Body() dto: CreateUserDto) {
-    const user = this.authService.register(dto.email, dto.password);
+  async register(@Body() dto: VerifyEmailDto) {
+    const user = await this.authService.verifyAndRegister(dto.email, dto.code);
     return user;
   }
 

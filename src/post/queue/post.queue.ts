@@ -70,7 +70,6 @@ export class PostingProcessor extends WorkerHost {
         }),
       )
       .reverse();
-    console.log(parents.map((p) => ({ id: p.id, parentId: p.parentId })));
     if (parents.length > 1) {
       const ancestorPosts = parents.slice(1);
 

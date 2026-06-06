@@ -32,6 +32,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { PostModule } from './post/post.module';
 import { ReactionModule } from './reaction/reaction.module';
 import { PaginationModule } from './pagination/pagination.module';
+import { ResendModule } from './resend/resend.module';
 
 @Module({
   imports: [
@@ -100,6 +101,7 @@ import { PaginationModule } from './pagination/pagination.module';
     PostModule,
     ReactionModule,
     PaginationModule,
+    ResendModule,
   ],
   controllers: [AppController],
   providers: [

@@ -86,18 +86,16 @@ export class UserService {
     return userPublic;
   }
 
-  async create(email: string, password: string) {
+  async create(email: string, passwordHash: string) {
     const existingUser = await this.findByEmail(email);
 
     if (existingUser) {
       throw new BadRequestException('user_exists');
     }
 
-    const hash = await bcrypt.hash(password, 10);
-
     const user = await this.usersRepo.save({
       email,
-      password: hash,
+      password: passwordHash,
     });
 
     return await this.getPublicUser(user);

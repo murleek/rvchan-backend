@@ -1,7 +1,6 @@
 import { Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiConsumes } from '@nestjs/swagger';
 import { createZodDto } from 'nestjs-zod';
-import { MediaService } from './media.service';
 import { R2Provider, SIZES } from './r2.provider';
 import z from 'zod';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';

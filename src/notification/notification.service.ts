@@ -96,6 +96,21 @@ export class NotificationService {
     });
   }
 
+  async serviceMessage(
+    userId: number,
+    payload: {
+      title: string;
+      subtitle?: string;
+      url?: string;
+    },
+  ) {
+    await this.queue.add('notify', {
+      type: NotificationType.SERVICE_MESSAGE,
+      recipientId: userId,
+      payload: payload,
+    });
+  }
+
   async markAllAsSeen(userId: number, deviceId: string) {
     const session = await this.sessions.getSession(deviceId);
 

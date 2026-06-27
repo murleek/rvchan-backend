@@ -56,6 +56,15 @@ export class UserService {
     return user;
   }
 
+  async findAll() {
+    const users = await this.usersRepo.find({
+      where: { state: 'ACTIVE' },
+      order: { id: 'DESC' },
+    });
+
+    return users;
+  }
+
   async getPublicUser(user: UserEntity): Promise<PublicUser> {
     const userPublic = UserMapper.toPublic(user);
 

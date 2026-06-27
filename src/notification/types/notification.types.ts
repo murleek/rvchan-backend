@@ -7,6 +7,7 @@ export const NotificationType = {
   POST_MENTION: 'post_mention',
   POST_REPLY: 'post_reply',
   POST_REPLY_TO_OTHER: 'post_reply_to_other',
+  SERVICE_MESSAGE: 'service_message',
 } as const;
 
 export type NotificationType =

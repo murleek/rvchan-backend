@@ -13,9 +13,9 @@ import { Throttle } from '@nestjs/throttler';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // @Throttle({
-  //   default: { ttl: 120000, limit: 1 },
-  // })
+  @Throttle({
+    default: { ttl: 300000, limit: 5 },
+  })
   @Post('verify')
   @States()
   async verify(@Body() dto: CreateUserDto) {

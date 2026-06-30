@@ -18,12 +18,11 @@ export class RecalculateRepliesCommand extends CommandRunner {
   }
 
   async run(): Promise<void> {
-    const posts = await this.postRepo.findTrees();
-
-    for (const post of posts) {
-      const replyCount = await this.postService.countReplies(post.id);
-      await this.postRepo.update(post.id, { replyCount });
-    }
+    // const posts = await this.postRepo.findTrees();
+    // for (const post of posts) {
+    //   // const replyCount = await this.postService.countReplies(post.id);
+    //   await this.postRepo.update(post.id, { replyCount });
+    // }
   }
 }
 

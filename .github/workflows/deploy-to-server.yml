@@ -31,6 +31,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_DEPLOY_KEY }}
+          port: 22
           script: |
             mkdir -p /var/www/api/
 
@@ -40,6 +41,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_DEPLOY_KEY }}
+          port: 22
           source: 'backend.tar,docker-compose.yml,tsconfig*'
           target: /var/www/api
 
@@ -49,6 +51,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_DEPLOY_KEY }}
+          port: 22
           script: |
             cd /var/www/api
             docker compose --env-file .env.prod down
